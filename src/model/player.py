@@ -8,7 +8,7 @@ class Player(pygame.sprite.Sprite):
         self.current_sprite = 0
 
         self.is_moving = False
-        self.velocity = 1
+        self.velocity = 2
         self.target_pos = pos
 
         self.directions = [(0, 1, "down"), (-1, 0, "left"), (0, -1, "up"), (1, 0, "right")]
@@ -40,6 +40,7 @@ class Player(pygame.sprite.Sprite):
         current_state = "moving" if self.is_moving else "idle"
 
         self.image = self.__sprites[current_state][self.directions[self.direction_index][2]][self.current_sprite]
+
         self.rect = self.image.get_rect(topleft=self.target_pos)
 
     def turn_left(self):

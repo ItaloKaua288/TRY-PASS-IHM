@@ -63,6 +63,7 @@ class GameModel:
 
     def update(self):
         self.player.update_movement()
+        self.player.update()
 
     def is_valid_move(self, pos):
         pos_x, pos_y = pos

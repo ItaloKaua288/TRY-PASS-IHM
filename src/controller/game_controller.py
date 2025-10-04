@@ -1,10 +1,12 @@
 import pygame
 
+from src.config import TILE_SIZE
 
 class GameController:
-    def __init__(self, model):
+    def __init__(self, model, view):
         self.model = model
-        self.tile_size = (42, 33)
+        self.view = view
+        self.tile_size = (TILE_SIZE, TILE_SIZE)
 
         start_tile_pos = (7, 5)
         start_pixel_pos = (start_tile_pos[0] * self.tile_size[0], start_tile_pos[1] * self.tile_size[1])
@@ -15,6 +17,10 @@ class GameController:
 
     def _setup_init(self):
         self.model.player.transform_size(self.tile_size)
+
+    def update_elements(self, mouse_pos):
+        self.model.update()
+        self.view.update(mouse_pos)
 
     def handle_events(self, events):
         for event in events:

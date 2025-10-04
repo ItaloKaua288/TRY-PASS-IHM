@@ -1,6 +1,8 @@
 import pygame
 from .ui_elements import IconButton
+from . import  camera
 
+from src.config import  TILE_SIZE
 
 class BasePanel:
     def __init__(self, size, topleft_pos, title_text=None, font=None, bg_color=(255, 255, 255), title_color=(0, 0, 0),
@@ -25,15 +27,20 @@ class BasePanel:
 class MapPanel:
     def __init__(self, size, pos, tile_map_data, assets):
         self.width, self.height = size
-        self.tile_size = (self.width // len(tile_map_data[0]), self.height // len(tile_map_data))
+        self.tile_size = (TILE_SIZE, TILE_SIZE)
         self.tile_set = assets.get_tileset("sprites/tiles_map", self.tile_size)
         self.image = pygame.Surface(size, pygame.SRCALPHA)
         self.rect = self.image.get_rect(topleft=pos)
 
         self.static_map_image = self._pre_render_map(tile_map_data)
+        self.static_map_image_rect = self.static_map_image.get_rect()
+
+        self.camera = camera.Camera((self.width, self.height), self.static_map_image.get_size())
 
     def _pre_render_map(self, tile_map_data):
-        surface = pygame.Surface(self.rect.size, pygame.SRCALPHA)
+        tile_size_x, tile_size_y = self.tile_size
+
+        surface = pygame.Surface((len(tile_map_data[0]) * tile_size_x, len(tile_map_data) * tile_size_y))
         for i, row in enumerate(tile_map_data):
             for j, tile_id in enumerate(row):
                 pos = (self.tile_size[0] * j, self.tile_size[1] * i)
@@ -41,11 +48,15 @@ class MapPanel:
         return surface
 
     def draw(self, screen, model):
-        screen.blit(self.static_map_image, self.rect)
+        self.image.fill((0, 0, 0))
+        self.camera.update(model.player.rect)
 
-        player_pos_on_screen = self.rect.move(model.player.rect.topleft)
-        model.player.update()
-        screen.blit(model.player.image, player_pos_on_screen)
+        self.image.blit(self.static_map_image, self.camera.apply_offset(self.static_map_image_rect))
+
+        player_rect_in_world = pygame.Rect(model.player.rect.x, model.player.rect.y, self.tile_size[0], self.tile_size[1])
+        self.image.blit(model.player.image, self.camera.apply_offset(player_rect_in_world))
+
+        screen.blit(self.image, self.rect)
 
 
 class TopBarPanel:

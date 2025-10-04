@@ -3,6 +3,8 @@ import json
 import pygame
 from os import path, listdir
 
+from src import config
+
 
 class AssetsManager:
     def __init__(self):
@@ -33,7 +35,8 @@ class AssetsManager:
             for filename in listdir(folder_path):
                 tile_id = int(filename.split('_')[1].split('.')[0])
                 surface = self.get_image(path.join(relative_path, filename))
-                self.tilesets[relative_path][tile_id] = pygame.transform.smoothscale(surface, tile_size)
+                # self.tilesets[relative_path][tile_id] = pygame.transform.smoothscale(surface, tile_size)
+                self.tilesets[relative_path][tile_id] = pygame.transform.smoothscale(surface, (config.TILE_SIZE, config.TILE_SIZE))
         return self.tilesets[relative_path]
 
     def get_frames(self, relative_path):
