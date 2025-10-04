@@ -1,0 +1,64 @@
+import pygame
+
+from src import assets_manager
+from view import game_view
+from model import  game_model
+from controller import game_controller
+
+SCREEN_WIDTH = 1024
+SCREEN_HEIGHT = int(SCREEN_WIDTH * 0.563)
+
+pygame.init()
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+
+assets = assets_manager.AssetsManager()
+
+pygame.display.set_icon(assets.get_image(r"icons\logo.png"))
+pygame.display.set_caption("TRY:PASS")
+clock = pygame.time.Clock()
+
+game_model = game_model.GameModel()
+game_model.load_level("src/level_data/level_data_1.json", assets)
+
+game_view = game_view.GameView(screen, assets, game_model)
+game_controller = game_controller.GameController(game_model)
+
+running = True
+while running:
+    clock.tick(60)
+
+    events = pygame.event.get()
+    mouse_pos = pygame.mouse.get_pos()
+
+    game_view.update(mouse_pos)
+    game_view.draw(game_model)
+    game_controller.handle_events(events)
+    game_model.update()
+
+    for event in events:
+        if event.type == pygame.QUIT:
+            running = False
+
+
+
+    # if game_state == "MAIN_MENU":
+    #     # main_menu_view.render(mouse_pos)
+    #     game_view.update(mouse_pos)
+    #     game_model.update()
+    #     game_view.draw(game_model)
+    #
+    #     action = "main_menu_controller.handle_events(events)"
+    #     if action == "NEW_GAME":
+    #         print("ABRINDO NOVO JOGO")
+    #         game_state = "IN_GAME"
+    #     elif action == "OPTIONS":
+    #         print("ABRINDO AS OPÇÕES")
+    #         game_state = "OPTIONS"
+    #     elif action == "QUIT":
+    #         print("SAINDO")
+    #         running = False
+
+    pygame.display.flip()
+
+pygame.quit()
+
