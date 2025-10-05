@@ -16,11 +16,11 @@ class GameView:
         title_font = self.assets.get_font("Monospace", 15)
 
         self.panels = {
+            "map": MapPanel((self.width - 220, self.height - 210), (5, 60), model.tile_map, self.assets),
             "inventory": InventoryPanel((300, 366), (self.width - 510, 60), title_font),
             "execution": ExecutionPanel((self.width - 10, 140), (5, self.height - 145), title_font, self.assets),
             "tools": ToolsPanel((200, 366), (self.width - 205, 60), title_font),
             "top_bar": TopBarPanel((self.width - 215, 50), (5, 5), title_font, model.objective_text, self.assets),
-            "map": MapPanel((self.width - 220, self.height - 210), (5, 60), model.tile_map, self.assets)
         }
 
         self.buttons = {

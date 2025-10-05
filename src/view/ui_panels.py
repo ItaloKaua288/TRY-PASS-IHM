@@ -7,10 +7,11 @@ from src.config import TILE_SIZE, BLACK_COLOR, WHITE_COLOR, GRAY_COLOR
 
 class BasePanel:
     def __init__(self, size, topleft_pos, title_text=None, font=None, bg_color=WHITE_COLOR, title_color=BLACK_COLOR,
-                 border_radius=10):
+                 border_radius=10, is_visible=True):
         self.width, self.height = size
         self.image = pygame.Surface(size, pygame.SRCALPHA)
         self.rect = self.image.get_rect(topleft=topleft_pos)
+        self.is_visible = is_visible
 
         self._draw_static_content(font, title_text, bg_color, title_color, border_radius)
 
@@ -22,7 +23,8 @@ class BasePanel:
             self.image.blit(title_surface, title_rect)
 
     def draw(self, screen, model):
-        screen.blit(self.image, self.rect)
+        if self.is_visible:
+            screen.blit(self.image, self.rect)
 
 
 class MapPanel:
@@ -71,22 +73,27 @@ class TopBarPanel:
         self._load_assets(assets)
 
     def _load_assets(self, assets):
-        self.buttons = []
+        center_y = self.height // 2
+        self.buttons = {
+            "options": IconButton(assets.get_image("icons/options.png"), (30, center_y), (40, 40), WHITE_COLOR, GRAY_COLOR, 100),
+            "idea": IconButton(assets.get_image("icons/idea.png"), (self.width - 80, center_y), (40, 40), WHITE_COLOR, GRAY_COLOR, 100),
+            "music_note": IconButton(assets.get_image("icons/music_note.png"), (self.width - 30, center_y), (40, 40), WHITE_COLOR, GRAY_COLOR, 100)
+        }
 
-        icons = [
-            assets.get_image("icons/options.png"),
-            assets.get_image("icons/idea.png"),
-            assets.get_image("icons/music_note.png")
-        ]
-
-        buttons_x_pos = [30, self.width - 80, self.width - 30]
-        for i, icon in enumerate(icons):
-            center_pos = (buttons_x_pos[i], self.height // 2)
-            self.buttons.append(IconButton(icon, center_pos, (40, 40), WHITE_COLOR, GRAY_COLOR, 100))
+        # icons = [
+        #     assets.get_image("icons/options.png"),
+        #     assets.get_image("icons/idea.png"),
+        #     assets.get_image("icons/music_note.png")
+        # ]
+        #
+        # buttons_x_pos = [30, self.width - 80, self.width - 30]
+        # for i, icon in enumerate(icons):
+        #     center_pos = (buttons_x_pos[i], self.height // 2)
+        #     self.buttons[] = (IconButton(icon, center_pos, (40, 40), WHITE_COLOR, GRAY_COLOR, 100))
 
     def update(self, mouse_pos):
         local_pos = (mouse_pos[0] - self.rect.x, mouse_pos[1] - self.rect.y)
-        for button in self.buttons:
+        for button in self.buttons.values():
             button.update(local_pos)
 
     def draw(self, screen, model):
@@ -99,7 +106,7 @@ class TopBarPanel:
         objective_text_surface = self.font.render(self.objective_text, True, (0, 0, 0))
         self.image.blit(objective_text_surface, objective_text_surface.get_rect(center=bg_objective.center))
 
-        for button in self.buttons:
+        for button in self.buttons.values():
             button.draw(self.image)
 
         screen.blit(self.image, self.rect)
@@ -107,7 +114,7 @@ class TopBarPanel:
 
 class InventoryPanel(BasePanel):
     def __init__(self, size, pos, font):
-        super().__init__(size, pos, "INVENTÁRIO", font)
+        super().__init__(size, pos, "INVENTÁRIO", font, is_visible=False)
 
 
 class ToolsPanel(BasePanel):

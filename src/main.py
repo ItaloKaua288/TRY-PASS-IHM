@@ -30,7 +30,7 @@ while running:
 
     game_view.draw(game_model)
     game_controller.update_elements(mouse_pos)
-    game_controller.handle_events(events)
+    game_controller.handle_events(events, mouse_pos)
 
     for event in events:
         if event.type == pygame.QUIT:
