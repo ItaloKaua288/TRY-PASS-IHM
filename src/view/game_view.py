@@ -2,6 +2,7 @@ import pygame
 from .ui_panels import MapPanel, TopBarPanel, InventoryPanel, ExecutionPanel, ToolsPanel
 from .ui_elements import TextButton
 
+from src.config import WHITE_COLOR, GRAY_COLOR
 
 class GameView:
     def __init__(self, screen, assets, model):
@@ -23,7 +24,7 @@ class GameView:
         }
 
         self.buttons = {
-            "inventory": TextButton("Inventário", title_font, (self.width - 105, 30), (255, 255, 255), (150, 150, 150),
+            "inventory": TextButton("Inventário", title_font, (self.width - 105, 30), WHITE_COLOR, GRAY_COLOR,
                                      (195, 50))
         }
 

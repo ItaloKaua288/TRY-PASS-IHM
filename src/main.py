@@ -36,25 +36,6 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
-
-
-    # if game_state == "MAIN_MENU":
-    #     # main_menu_view.render(mouse_pos)
-    #     game_view.update(mouse_pos)
-    #     game_model.update()
-    #     game_view.draw(game_model)
-    #
-    #     action = "main_menu_controller.handle_events(events)"
-    #     if action == "NEW_GAME":
-    #         print("ABRINDO NOVO JOGO")
-    #         game_state = "IN_GAME"
-    #     elif action == "OPTIONS":
-    #         print("ABRINDO AS OPÇÕES")
-    #         game_state = "OPTIONS"
-    #     elif action == "QUIT":
-    #         print("SAINDO")
-    #         running = False
-
     pygame.display.flip()
 
 pygame.quit()

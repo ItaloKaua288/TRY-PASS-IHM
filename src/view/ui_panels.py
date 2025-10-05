@@ -2,10 +2,11 @@ import pygame
 from .ui_elements import IconButton
 from . import  camera
 
-from src.config import  TILE_SIZE
+from src.config import TILE_SIZE, BLACK_COLOR, WHITE_COLOR, GRAY_COLOR
+
 
 class BasePanel:
-    def __init__(self, size, topleft_pos, title_text=None, font=None, bg_color=(255, 255, 255), title_color=(0, 0, 0),
+    def __init__(self, size, topleft_pos, title_text=None, font=None, bg_color=WHITE_COLOR, title_color=BLACK_COLOR,
                  border_radius=10):
         self.width, self.height = size
         self.image = pygame.Surface(size, pygame.SRCALPHA)
@@ -43,7 +44,7 @@ class MapPanel:
         surface = pygame.Surface((len(tile_map_data[0]) * tile_size_x, len(tile_map_data) * tile_size_y))
         for i, row in enumerate(tile_map_data):
             for j, tile_id in enumerate(row):
-                pos = (self.tile_size[0] * j, self.tile_size[1] * i)
+                pos = (tile_size_x * j, tile_size_y * i)
                 surface.blit(self.tile_set[tile_id], pos)
         return surface
 
@@ -81,7 +82,7 @@ class TopBarPanel:
         buttons_x_pos = [30, self.width - 80, self.width - 30]
         for i, icon in enumerate(icons):
             center_pos = (buttons_x_pos[i], self.height // 2)
-            self.buttons.append(IconButton(icon, center_pos, (40, 40), (255, 255, 255), (150, 150, 150), 100))
+            self.buttons.append(IconButton(icon, center_pos, (40, 40), WHITE_COLOR, GRAY_COLOR, 100))
 
     def update(self, mouse_pos):
         local_pos = (mouse_pos[0] - self.rect.x, mouse_pos[1] - self.rect.y)
@@ -93,7 +94,7 @@ class TopBarPanel:
 
         bg_objective = pygame.Rect(0, 0, 550, self.height - 10)
         bg_objective.center = (self.width // 2, self.height // 2)
-        pygame.draw.rect(self.image, (255, 255, 255), bg_objective, border_radius=10)
+        pygame.draw.rect(self.image, WHITE_COLOR, bg_objective, border_radius=10)
 
         objective_text_surface = self.font.render(self.objective_text, True, (0, 0, 0))
         self.image.blit(objective_text_surface, objective_text_surface.get_rect(center=bg_objective.center))

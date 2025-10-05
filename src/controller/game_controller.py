@@ -8,10 +8,9 @@ class GameController:
         self.view = view
         self.tile_size = (TILE_SIZE, TILE_SIZE)
 
-        start_tile_pos = (7, 5)
+        start_tile_pos = model.player.target_pos
         start_pixel_pos = (start_tile_pos[0] * self.tile_size[0], start_tile_pos[1] * self.tile_size[1])
         self.model.player.rect.topleft = start_pixel_pos
-        self.model.player.target_pos = start_pixel_pos
 
         self._setup_init()
 
