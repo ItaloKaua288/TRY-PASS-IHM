@@ -28,14 +28,14 @@ class BaseButton:
 
 
 class TextButton(BaseButton):
-    def __init__(self, text, font, center_pos, color, color_hover, size=None):
+    def __init__(self, text, font, center_pos, color, color_hover, size=None, border_radius=10):
         super().__init__()
         self.text = text
 
-        self._create_elements(color, color_hover, font, size)
+        self._create_elements(color, color_hover, font, size, border_radius)
         self._setup_rect(center_pos)
 
-    def _create_elements(self, color, color_hover, font, size):
+    def _create_elements(self, color, color_hover, font, size, border_radius):
         normal_text = font.render(self.text, True, (0, 0, 0))
         hover_text = font.render(self.text, True, (0, 0, 0))
 
@@ -45,11 +45,11 @@ class TextButton(BaseButton):
             rect = pygame.Rect(0, 0, width, height)
 
             self.normal_surface = pygame.Surface((width, height), pygame.SRCALPHA)
-            pygame.draw.rect(self.normal_surface, color, rect, border_radius=10)
+            pygame.draw.rect(self.normal_surface, color, rect, border_radius=border_radius)
             self.normal_surface.blit(normal_text, normal_text.get_rect(center=(width // 2, height // 2)))
 
             self.hover_surface = pygame.Surface((width, height), pygame.SRCALPHA)
-            pygame.draw.rect(self.hover_surface, color_hover, rect, border_radius=10)
+            pygame.draw.rect(self.hover_surface, color_hover, rect, border_radius=border_radius)
             self.hover_surface.blit(hover_text, hover_text.get_rect(center=(width // 2, height // 2)))
         else:
             self.normal_surface = normal_text

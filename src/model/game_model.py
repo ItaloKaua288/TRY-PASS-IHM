@@ -31,7 +31,9 @@ class GameModel:
         return True
 
     def add_action_to_sequence(self, action):
-        # and action in self.available_actions
+        if len(self.actions_sequence) >= 26:
+            return
+
         if self.game_state == GameState.CODING:
             self.actions_sequence.append(action)
 

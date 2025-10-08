@@ -35,10 +35,10 @@ class GameController:
                 if event.type == pygame.KEYDOWN and not self.model.player.is_moving:
                     if event.key == pygame.K_a:
                         turnrightcommand = TurnRightCommand()
-                        turnrightcommand.execute(self.model.player)
+                        turnrightcommand.execute(self.model)
                     elif event.key == pygame.K_d:
                         turnleftcommand = TurnLeftCommand()
-                        turnleftcommand.execute(self.model.player)
+                        turnleftcommand.execute(self.model)
                     elif event.key == pygame.K_w:
                         walkcommand = WalkCommand()
                         walkcommand.execute(self.model)
@@ -50,7 +50,7 @@ class GameController:
                     elif self.view.panels["tools"].rect.collidepoint(mouse_pos):
                         self._tools_handler()
                     elif self.view.panels["execution"].rect.collidepoint(mouse_pos):
-                        self._execute_handler()
+                        self._execute_handler(mouse_pos)
 
     def _view_button_handler(self):
         button = self.view.buttons["inventory"]
@@ -87,8 +87,17 @@ class GameController:
                     case "turn_right":
                         self.model.add_action_to_sequence(TurnRightCommand())
 
-    def _execute_handler(self):
+    def _execute_handler(self, mouse_pos):
         buttons = self.view.panels["execution"].buttons
+        actions_buttons = self.view.panels["execution"].buttons_sequence
+
+        mouse_pos = (mouse_pos[0] - self.view.panels["execution"].rect.x + 10, mouse_pos[1] - self.view.panels["execution"].rect.y)
+
+        for i, button in enumerate(actions_buttons):
+            button.update(mouse_pos)
+            if button.is_hovered:
+                self.model.remove_action_from_sequence(i)
+
 
         for key, button in buttons.items():
             if button.is_hovered:

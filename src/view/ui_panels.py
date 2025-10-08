@@ -2,7 +2,7 @@ import pygame
 from .ui_elements import IconButton, TextButton
 from . import  camera
 
-from src.config import TILE_SIZE, BLACK_COLOR, WHITE_COLOR, GRAY_COLOR, LIGHT_GREEN_COLOR
+from src.config import TILE_SIZE, BLACK_COLOR, WHITE_COLOR, GRAY_COLOR, LIGHT_GREEN_COLOR, DARK_GRAY_COLOR
 
 
 class BasePanel:
@@ -116,9 +116,9 @@ class ToolsPanel(BasePanel):
     def _create_elements(self, assets):
         button_font = assets.get_font("Monospace", 10)
         self.buttons = {
-            "walk": TextButton("ANDAR", button_font, (30, 55), WHITE_COLOR, GRAY_COLOR, (50, 50)),
-            "turn_right": TextButton("DIREITA", button_font, (85, 55), WHITE_COLOR, GRAY_COLOR, (50, 50)),
-            "turn_left": TextButton("ESQUERDA", button_font, (140, 55), WHITE_COLOR, GRAY_COLOR, (50, 50))
+            "walk": TextButton("ANDAR", button_font, (30, 55), DARK_GRAY_COLOR, GRAY_COLOR, (50, 50)),
+            "turn_right": TextButton("DIREITA", button_font, (85, 55), DARK_GRAY_COLOR, GRAY_COLOR, (50, 50)),
+            "turn_left": TextButton("ESQUERDA", button_font, (140, 55), DARK_GRAY_COLOR, GRAY_COLOR, (50, 50))
         }
 
     def draw_elements(self):
@@ -137,6 +137,7 @@ class ExecutionPanel(BasePanel):
         self.assets = assets
         self._create_elements(assets)
         self._draw_static_elements(self.assets)
+        self.buttons_sequence = []
 
     def _create_elements(self, assets):
         self.buttons = {
@@ -160,11 +161,27 @@ class ExecutionPanel(BasePanel):
 
     def draw(self, screen, model):
         super().draw(screen, model)
+        self.image.fill(WHITE_COLOR)
+
+        self._draw_static_elements(self.assets)
         self.buttons["execute"].draw(self.image)
 
         size_frame_x = (self.width - 60) // 14
-        size_frame_y = (self.height - 40) // 2
-        button_font = self.assets.get_font("Monospace", 10)
+        size_frame_y = (self.height - 110)
+        button_font = self.assets.get_font("Monospace", 8)
 
+        self.buttons_sequence.clear()
         for k, action in enumerate(model.actions_sequence):
-            self.image.blit(TextButton("walk", button_font, (size_frame_x * k + 10, size_frame_y), WHITE_COLOR, GRAY_COLOR, (50, 50)).image, (size_frame_x * k + 10, size_frame_y))
+            button = TextButton(action.action_name, button_font, (size_frame_x * k + 20, size_frame_y), DARK_GRAY_COLOR, GRAY_COLOR, (69, 50), border_radius=0)
+            button.rect.topleft = (size_frame_x * k + 20, size_frame_y + 20)
+
+            if 26 / (k+1) >= 2:
+                pos = (size_frame_x * k + 10, size_frame_y)
+                self.image.blit(button.image, pos)
+
+            else:
+                pos = (size_frame_x * (k-13) + 10, size_frame_y+50)
+                self.image.blit(button.image, pos)
+
+            button.rect.topleft = pos
+            self.buttons_sequence.append(button)

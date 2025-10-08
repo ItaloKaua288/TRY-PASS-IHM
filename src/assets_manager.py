@@ -49,7 +49,7 @@ class AssetsManager:
         if relative_path not in self.level_data:
             full_path = path.join(self.base_path, relative_path)
             try:
-                with open(full_path) as file:
+                with open(full_path, 'r', encoding='utf-8') as file:
                     level_data = json.load(file)
 
                     self.level_data[relative_path] = {
