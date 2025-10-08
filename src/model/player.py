@@ -1,4 +1,5 @@
 import pygame
+from src.config import TILE_SIZE
 
 
 class Player(pygame.sprite.Sprite):
@@ -43,18 +44,14 @@ class Player(pygame.sprite.Sprite):
 
         self.rect = self.image.get_rect(topleft=self.target_pos)
 
-    def turn_left(self):
-        if not self.is_moving:
-            self.direction_index = (self.direction_index + 1) % len(self.directions)
+    def get_next_tile_pos(self):
+        dx, dy = self.get_direction_vector()
+        return self.rect.x + dx * TILE_SIZE, self.rect.y + dy * TILE_SIZE
 
-    def turn_right(self):
-        if not self.is_moving:
-            self.direction_index = (self.direction_index - 1 + len(self.directions)) % len(self.directions)
-
-    def set_next_move(self, tile_size):
+    def set_next_move(self):
         if not self.is_moving:
             dx, dy = self.get_direction_vector()
-            self.target_pos = (self.rect.x + dx * tile_size[0], self.rect.y + dy * tile_size[1])
+            self.target_pos = (self.rect.x + dx * TILE_SIZE, self.rect.y + dy * TILE_SIZE)
             self.is_moving = True
 
     def get_direction_vector(self):

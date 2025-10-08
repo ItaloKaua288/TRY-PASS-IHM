@@ -1,8 +1,8 @@
 import pygame
-from .ui_elements import IconButton
+from .ui_elements import IconButton, TextButton
 from . import  camera
 
-from src.config import TILE_SIZE, BLACK_COLOR, WHITE_COLOR, GRAY_COLOR
+from src.config import TILE_SIZE, BLACK_COLOR, WHITE_COLOR, GRAY_COLOR, LIGHT_GREEN_COLOR
 
 
 class BasePanel:
@@ -80,17 +80,6 @@ class TopBarPanel:
             "music_note": IconButton(assets.get_image("icons/music_note.png"), (self.width - 30, center_y), (40, 40), WHITE_COLOR, GRAY_COLOR, 100)
         }
 
-        # icons = [
-        #     assets.get_image("icons/options.png"),
-        #     assets.get_image("icons/idea.png"),
-        #     assets.get_image("icons/music_note.png")
-        # ]
-        #
-        # buttons_x_pos = [30, self.width - 80, self.width - 30]
-        # for i, icon in enumerate(icons):
-        #     center_pos = (buttons_x_pos[i], self.height // 2)
-        #     self.buttons[] = (IconButton(icon, center_pos, (40, 40), WHITE_COLOR, GRAY_COLOR, 100))
-
     def update(self, mouse_pos):
         local_pos = (mouse_pos[0] - self.rect.x, mouse_pos[1] - self.rect.y)
         for button in self.buttons.values():
@@ -118,24 +107,64 @@ class InventoryPanel(BasePanel):
 
 
 class ToolsPanel(BasePanel):
-    def __init__(self, size, pos, font):
+    def __init__(self, size, pos, font, assets):
         super().__init__(size, pos, "CAIXA DE FERRAMENTAS", font)
 
+        self._create_elements(assets)
+        self.draw_elements()
+
+    def _create_elements(self, assets):
+        button_font = assets.get_font("Monospace", 10)
+        self.buttons = {
+            "walk": TextButton("ANDAR", button_font, (30, 55), WHITE_COLOR, GRAY_COLOR, (50, 50)),
+            "turn_right": TextButton("DIREITA", button_font, (85, 55), WHITE_COLOR, GRAY_COLOR, (50, 50)),
+            "turn_left": TextButton("ESQUERDA", button_font, (140, 55), WHITE_COLOR, GRAY_COLOR, (50, 50))
+        }
+
+    def draw_elements(self):
+        for button in self.buttons.values():
+            button.draw(self.image)
+
+    def update(self, mouse_pos):
+        mouse_pos = (mouse_pos[0] - self.rect.x, mouse_pos[1] - self.rect.y)
+        for button in self.buttons.values():
+            button.update(mouse_pos)
+        self.draw_elements()
 
 class ExecutionPanel(BasePanel):
     def __init__(self, size, pos, font, assets):
         super().__init__(size, pos, "SEQUÊNCIA DE EXECUÇÃO", font)
+        self.assets = assets
+        self._create_elements(assets)
+        self._draw_static_elements(self.assets)
 
-        self._draw_elements(assets)
+    def _create_elements(self, assets):
+        self.buttons = {
+            "execute": IconButton(assets.get_image("icons/play.png"), (self.width - 30, self.height // 2), (40, self.height - 10), LIGHT_GREEN_COLOR, GRAY_COLOR, 100),
+        }
 
-    def _draw_elements(self, assets):
-        size_frame_x = (self.width - 20) // 15
+    def update(self, mouse_pos):
+        mouse_pos = (mouse_pos[0] - self.rect.x, mouse_pos[1] - self.rect.y)
+        self.buttons["execute"].update(mouse_pos)
+
+    def _draw_static_elements(self, assets):
+        size_frame_x = (self.width - 60) // 14
         size_frame_y = (self.height - 40) // 2
 
         black_frame_relative_path = "black_frame.png"
-        frame_surface = pygame.transform.smoothscale(assets.get_frames(black_frame_relative_path),
-                                                     (size_frame_x, size_frame_y))
+        frame_surface = pygame.transform.smoothscale(assets.get_image(black_frame_relative_path),(size_frame_x, size_frame_y))
 
         for i in range(2):
-            for j in range(15):
+            for j in range(13):
                 self.image.blit(frame_surface, (size_frame_x * j + 10, size_frame_y * i + 30))
+
+    def draw(self, screen, model):
+        super().draw(screen, model)
+        self.buttons["execute"].draw(self.image)
+
+        size_frame_x = (self.width - 60) // 14
+        size_frame_y = (self.height - 40) // 2
+        button_font = self.assets.get_font("Monospace", 10)
+
+        for k, action in enumerate(model.actions_sequence):
+            self.image.blit(TextButton("walk", button_font, (size_frame_x * k + 10, size_frame_y), WHITE_COLOR, GRAY_COLOR, (50, 50)).image, (size_frame_x * k + 10, size_frame_y))

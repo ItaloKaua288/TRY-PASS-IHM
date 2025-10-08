@@ -1,6 +1,9 @@
 import pygame
 
 from src.config import TILE_SIZE
+from src.model.commands import WalkCommand, TurnLeftCommand, TurnRightCommand
+from src.model.game_model import GameState
+
 
 class GameController:
     def __init__(self, model, view):
@@ -22,38 +25,48 @@ class GameController:
         self.view.update(mouse_pos)
 
     def handle_events(self, events, mouse_pos):
-        for event in events:
-            if event.type == pygame.KEYDOWN and not self.model.player.is_moving:
-                if event.key == pygame.K_a:
-                    self.model.player.turn_left()
-                elif event.key == pygame.K_d:
-                    self.model.player.turn_right()
-                elif event.key == pygame.K_w:
-                    dx, dy = self.model.player.get_direction_vector()
-                    current_tile_x = self.model.player.rect.x // self.tile_size[0]
-                    current_tile_y = self.model.player.rect.y // self.tile_size[1]
+        if self.model.game_state == GameState.EXECUTING and not self.model.player.is_moving:
+            self.model.actions_sequence.pop(0).execute(self.model)
 
-                    next_tile = (current_tile_x + dx, current_tile_y + dy)
+            if len(self.model.actions_sequence) == 0:
+                self.model.game_state = GameState.CODING
+        else:
+            for event in events:
+                if event.type == pygame.KEYDOWN and not self.model.player.is_moving:
+                    if event.key == pygame.K_a:
+                        turnrightcommand = TurnRightCommand()
+                        turnrightcommand.execute(self.model.player)
+                    elif event.key == pygame.K_d:
+                        turnleftcommand = TurnLeftCommand()
+                        turnleftcommand.execute(self.model.player)
+                    elif event.key == pygame.K_w:
+                        walkcommand = WalkCommand()
+                        walkcommand.execute(self.model)
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    if self.view.buttons["inventory"].rect.collidepoint(mouse_pos):
+                        self._view_button_handler()
+                    elif self.view.panels["top_bar"].rect.collidepoint(mouse_pos):
+                        self._top_bar_handler()
+                    elif self.view.panels["tools"].rect.collidepoint(mouse_pos):
+                        self._tools_handler()
+                    elif self.view.panels["execution"].rect.collidepoint(mouse_pos):
+                        self._execute_handler()
 
-                    if self.model.is_valid_move(next_tile):
-                        self.model.player.set_next_move(self.tile_size)
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                self._button_handler(mouse_pos)
+    def _view_button_handler(self):
+        button = self.view.buttons["inventory"]
+        if button.is_hovered:
+            inventory_panel = self.view.panels["inventory"]
+            if inventory_panel.is_visible:
+                inventory_panel.is_visible = False
+            else:
+                inventory_panel.is_visible = True
 
-    def _button_handler(self, mouse_pos):
-        for k, button in self.view.buttons.items():
+    def _top_bar_handler(self):
+        buttons = self.view.panels["top_bar"].buttons
+
+        for key, button in buttons.items():
             if button.is_hovered:
-                if k == "inventory":
-                    inventory_panel = self.view.panels["inventory"]
-                    if inventory_panel.is_visible:
-                        inventory_panel.is_visible = False
-                    else:
-                        inventory_panel.is_visible = True
-                return
-
-        for k, button in self.view.panels["top_bar"].buttons.items():
-            if button.is_hovered:
-                match k:
+                match key:
                     case "options":
                         print("Options")
                     case "idea":
@@ -61,4 +74,24 @@ class GameController:
                     case "music_note":
                         print("Music note")
 
+    def _tools_handler(self):
+        buttons = self.view.panels["tools"].buttons
 
+        for key, button in buttons.items():
+            if button.is_hovered:
+                match key:
+                    case "walk":
+                        self.model.add_action_to_sequence(WalkCommand())
+                    case "turn_left":
+                        self.model.add_action_to_sequence(TurnLeftCommand())
+                    case "turn_right":
+                        self.model.add_action_to_sequence(TurnRightCommand())
+
+    def _execute_handler(self):
+        buttons = self.view.panels["execution"].buttons
+
+        for key, button in buttons.items():
+            if button.is_hovered:
+                match key:
+                    case "execute":
+                        self.model.start_execution()

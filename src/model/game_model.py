@@ -1,4 +1,5 @@
 from . import player
+from src.config import TILE_SIZE
 
 
 class GameState:
@@ -30,7 +31,8 @@ class GameModel:
         return True
 
     def add_action_to_sequence(self, action):
-        if self.game_state == GameState.CODING and action in self.available_actions:
+        # and action in self.available_actions
+        if self.game_state == GameState.CODING:
             self.actions_sequence.append(action)
 
     def remove_action_from_sequence(self, index):
@@ -45,28 +47,14 @@ class GameModel:
         self.actions_sequence.clear()
         self.game_state = GameState.CODING
 
-    def process_next_action(self):
-        if self.game_state != GameState.EXECUTING or not self.actions_sequence:
-            self.game_state = GameState.CODING
-            return
-
-        action = self.actions_sequence.pop(0)
-
-        if action == "WALK":
-            next_pos = self.player.get_next_pos()
-            if self.is_valid_move(next_pos):
-                self.player.move()
-        elif action == "LEFT":
-            self.player.turn_left()
-        elif action == "RIGHT":
-            self.player.turn_right()
-
     def update(self):
         self.player.update_movement()
         self.player.update()
 
-    def is_valid_move(self, pos):
-        pos_x, pos_y = pos
+    def is_valid_move(self, pos_pixels):
+        pos_pixels_x, pos_pixels_y = pos_pixels
+        pos_x = pos_pixels_x // TILE_SIZE
+        pos_y = pos_pixels_y // TILE_SIZE
 
         if not (0 <= pos_y < len(self.tile_map) and 0 <= pos_x < len(self.tile_map[0])):
             return False
