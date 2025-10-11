@@ -10,6 +10,8 @@ class GameView:
         self.assets = assets
         self.width, self.height = screen.get_size()
 
+        self.image = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
+
         self._create_ui_elements(model)
 
     def _create_ui_elements(self, model):
@@ -17,10 +19,10 @@ class GameView:
 
         self.panels = {
             "map": MapPanel((self.width - 220, self.height - 210), (5, 60), model.tile_map, self.assets),
-            "inventory": InventoryPanel((300, 366), (self.width - 510, 60), title_font),
             "execution": ExecutionPanel((self.width - 10, 140), (5, self.height - 145), title_font, self.assets),
+            "inventory": InventoryPanel((400, 366), ((self.width // 2) - 200, (self.height // 2) - 183), title_font),
             "tools": ToolsPanel((200, 366), (self.width - 205, 60), title_font, self.assets),
-            "top_bar": TopBarPanel((self.width - 215, 50), (5, 5), title_font, model.objective_text, self.assets),
+            "top_bar": TopBarPanel((self.width - 215, 50), (5, 5), title_font, model.objective_text, self.assets)
         }
 
         self.buttons = {
@@ -35,12 +37,13 @@ class GameView:
         self.buttons["inventory"].update(mouse_pos)
 
     def draw(self, model, assets):
-        self.screen.fill((30, 30, 30))
+        self.image.fill((30, 30, 30))
 
         for panel in self.panels.values():
-            panel.draw(self.screen, model, assets)
+            panel.draw(self.image, model, assets)
 
         for button in self.buttons.values():
-            button.draw(self.screen)
+            button.draw(self.image)
 
+        self.screen.blit(self.image, self.image.get_rect())
         pygame.display.flip()

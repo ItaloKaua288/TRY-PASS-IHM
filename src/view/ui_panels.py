@@ -105,6 +105,10 @@ class InventoryPanel(BasePanel):
     def __init__(self, size, pos, font):
         super().__init__(size, pos, "INVENTÁRIO", font, is_visible=False)
 
+    def draw(self, screen, model, assets=None):
+        if self.is_visible:
+            screen.fill((0, 0, 0, 180))
+        super().draw(screen, model, assets)
 
 class ToolsPanel(BasePanel):
     def __init__(self, size, pos, font, assets):
@@ -160,7 +164,7 @@ class ExecutionPanel(BasePanel):
             for j in range(13):
                 self.image.blit(frame_surface, (size_frame_x * j + 10, size_frame_y * i + 30))
 
-    def draw(self, screen, model, assets):
+    def draw(self, screen, model, assets=None):
         super().draw(screen, model)
         self.image.fill(WHITE_COLOR)
 
