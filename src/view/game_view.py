@@ -34,11 +34,11 @@ class GameView:
         self.panels["execution"].update(mouse_pos)
         self.buttons["inventory"].update(mouse_pos)
 
-    def draw(self, model):
+    def draw(self, model, assets):
         self.screen.fill((30, 30, 30))
 
         for panel in self.panels.values():
-            panel.draw(self.screen, model)
+            panel.draw(self.screen, model, assets)
 
         for button in self.buttons.values():
             button.draw(self.screen)

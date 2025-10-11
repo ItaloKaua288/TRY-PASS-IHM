@@ -22,7 +22,7 @@ class BasePanel:
             title_rect = title_surface.get_rect(center=(self.width // 2, 15))
             self.image.blit(title_surface, title_rect)
 
-    def draw(self, screen, model):
+    def draw(self, screen, model, assets=None):
         if self.is_visible:
             screen.blit(self.image, self.rect)
 
@@ -50,7 +50,7 @@ class MapPanel:
                 surface.blit(self.tile_set[tile_id], pos)
         return surface
 
-    def draw(self, screen, model):
+    def draw(self, screen, model, assets):
         self.image.fill((0, 0, 0))
         self.camera.update(model.player.rect)
 
@@ -85,7 +85,7 @@ class TopBarPanel:
         for button in self.buttons.values():
             button.update(local_pos)
 
-    def draw(self, screen, model):
+    def draw(self, screen, model, assets):
         self.image.fill((0, 0, 0, 0))
 
         bg_objective = pygame.Rect(0, 0, 550, self.height - 10)
@@ -116,9 +116,10 @@ class ToolsPanel(BasePanel):
     def _create_elements(self, assets):
         button_font = assets.get_font("Monospace", 10)
         self.buttons = {
-            "walk": TextButton("ANDAR", button_font, (30, 55), DARK_GRAY_COLOR, GRAY_COLOR, (50, 50)),
-            "turn_right": TextButton("DIREITA", button_font, (85, 55), DARK_GRAY_COLOR, GRAY_COLOR, (50, 50)),
-            "turn_left": TextButton("ESQUERDA", button_font, (140, 55), DARK_GRAY_COLOR, GRAY_COLOR, (50, 50))
+            "walk": IconButton(assets.get_image(r"icons/walk.png"), (30, 55), (50, 50), DARK_GRAY_COLOR, GRAY_COLOR, border_radius=10),
+            "turn_right": IconButton(assets.get_image(r"icons/turn_right.png"), (85, 55), (50, 50), DARK_GRAY_COLOR, GRAY_COLOR, border_radius=10),
+            "turn_left": IconButton(assets.get_image(r"icons/turn_left.png"), (140, 55), (50, 50), DARK_GRAY_COLOR, GRAY_COLOR, border_radius=10),
+            "repeat": IconButton(assets.get_image(r"icons/repeat.png"), (30, 110), (50, 50), DARK_GRAY_COLOR, GRAY_COLOR, border_radius=10),
         }
 
     def draw_elements(self):
@@ -159,7 +160,7 @@ class ExecutionPanel(BasePanel):
             for j in range(13):
                 self.image.blit(frame_surface, (size_frame_x * j + 10, size_frame_y * i + 30))
 
-    def draw(self, screen, model):
+    def draw(self, screen, model, assets):
         super().draw(screen, model)
         self.image.fill(WHITE_COLOR)
 
@@ -172,7 +173,8 @@ class ExecutionPanel(BasePanel):
 
         self.buttons_sequence.clear()
         for k, action in enumerate(model.actions_sequence):
-            button = TextButton(action.action_name, button_font, (size_frame_x * k + 20, size_frame_y), DARK_GRAY_COLOR, GRAY_COLOR, (69, 50), border_radius=0)
+            icon_path = f"icons/{action.action_name.lower()}.png"
+            button = IconButton(assets.get_image(icon_path), (size_frame_x * k + 20, size_frame_y), (69, 50), DARK_GRAY_COLOR, GRAY_COLOR)
             button.rect.topleft = (size_frame_x * k + 20, size_frame_y + 20)
 
             if 26 / (k+1) >= 2:

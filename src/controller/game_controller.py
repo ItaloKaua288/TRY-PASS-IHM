@@ -1,7 +1,7 @@
 import pygame
 
 from src.config import TILE_SIZE
-from src.model.commands import WalkCommand, TurnLeftCommand, TurnRightCommand
+from src.model.commands import WalkCommand, TurnLeftCommand, TurnRightCommand, RepeatCommand
 from src.model.game_model import GameState
 
 
@@ -86,6 +86,8 @@ class GameController:
                         self.model.add_action_to_sequence(TurnLeftCommand())
                     case "turn_right":
                         self.model.add_action_to_sequence(TurnRightCommand())
+                    case "repeat":
+                        self.model.add_action_to_sequence(RepeatCommand())
 
     def _execute_handler(self, mouse_pos):
         buttons = self.view.panels["execution"].buttons

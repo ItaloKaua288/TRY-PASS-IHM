@@ -28,7 +28,7 @@ while running:
     events = pygame.event.get()
     mouse_pos = pygame.mouse.get_pos()
 
-    game_view.draw(game_model)
+    game_view.draw(game_model, assets)
     game_controller.update_elements(mouse_pos)
     game_controller.handle_events(events, mouse_pos)
 

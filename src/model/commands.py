@@ -8,8 +8,11 @@ class Command(ABC):
     def execute(self, model):
         pass
 
+    def is_finished(self):
+        return True
+
 class WalkCommand(Command):
-    action_name = "ANDAR"
+    action_name = "WALK"
     def execute(self, game_model):
         next_tile_pos_x, next_tile_pos_y = game_model.player.get_next_tile_pos()
 
@@ -18,17 +21,47 @@ class WalkCommand(Command):
             game_model.remove_action_from_sequence(0)
 
 class TurnLeftCommand(Command):
-    action_name = "VIRAR_ESQUERDA"
+    action_name = "TURN_LEFT"
+    def execute(self, game_model):
+        player = game_model.player
+        if not player.is_moving:
+            player.direction_index = (player.direction_index - 1) % len(player.directions)
+            game_model.remove_action_from_sequence(0)
+
+class TurnRightCommand(Command):
+    action_name = "TURN_RIGHT"
     def execute(self, game_model):
         player = game_model.player
         if not player.is_moving:
             player.direction_index = (player.direction_index + 1) % len(player.directions)
             game_model.remove_action_from_sequence(0)
 
-class TurnRightCommand(Command):
-    action_name = "VIRAR_DIREITA"
+class RepeatCommand(Command):
+    def __init__(self, repeat_num=1):
+        self.action_name = "REPEAT"
+        self.repeat_num = repeat_num
+        self.command_list = []
+
+        self._command_index = 0
+        self._current_repeat = 0
+        self._is_finished = False
+
     def execute(self, game_model):
-        player = game_model.player
-        if not player.is_moving:
-            player.direction_index = (player.direction_index - 1 + len(player.directions)) % len(player.directions)
-            game_model.remove_action_from_sequence(0)
+        if self._is_finished or not self.command_list:
+            return
+
+        current_command = self.command_list[self._command_index]
+        current_command.execute(self, game_model)
+
+        if current_command.is_finished:
+            self._command_index += 1
+
+            if self._command_index >= len(self.command_list):
+                self._current_repeat += 1
+                self._command_index = 0
+
+            if self._current_repeat >= self.repeat_num:
+                self._is_finished = True
+
+    def is_finished(self):
+        return self._is_finished
