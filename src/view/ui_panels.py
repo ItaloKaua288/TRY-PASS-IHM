@@ -2,7 +2,7 @@ import pygame
 from .ui_elements import IconButton, TextButton
 from . import  camera
 
-from src.config import TILE_SIZE, BLACK_COLOR, WHITE_COLOR, GRAY_COLOR, LIGHT_GREEN_COLOR, DARK_GRAY_COLOR
+from src.config import TILE_SIZE, BLACK_COLOR, WHITE_COLOR, GRAY_COLOR, LIGHT_GREEN_COLOR, DARK_GRAY_COLOR, TRANSPARENT_COLOR
 
 
 class BasePanel:
@@ -123,7 +123,7 @@ class ToolsPanel(BasePanel):
             "walk": IconButton(assets.get_image(r"icons/walk.png"), (30, 55), (50, 50), DARK_GRAY_COLOR, GRAY_COLOR, border_radius=10),
             "turn_right": IconButton(assets.get_image(r"icons/turn_right.png"), (85, 55), (50, 50), DARK_GRAY_COLOR, GRAY_COLOR, border_radius=10),
             "turn_left": IconButton(assets.get_image(r"icons/turn_left.png"), (140, 55), (50, 50), DARK_GRAY_COLOR, GRAY_COLOR, border_radius=10),
-            "repeat": IconButton(assets.get_image(r"icons/repeat.png"), (30, 110), (50, 50), DARK_GRAY_COLOR, GRAY_COLOR, border_radius=10),
+            "repeat": IconButton(assets.get_image(r"icons/repeat_icon.png"), (30, 110), (50, 50), DARK_GRAY_COLOR, GRAY_COLOR, border_radius=10),
         }
 
     def draw_elements(self):
@@ -178,7 +178,7 @@ class ExecutionPanel(BasePanel):
         self.buttons_sequence.clear()
         for k, action in enumerate(model.actions_sequence):
             icon_path = f"icons/{action.action_name.lower()}.png"
-            button = IconButton(assets.get_image(icon_path), (size_frame_x * k + 20, size_frame_y), (69, 50), DARK_GRAY_COLOR, GRAY_COLOR)
+            button = IconButton(assets.get_image(icon_path), (size_frame_x * k + 20, size_frame_y), (69, 50), TRANSPARENT_COLOR, TRANSPARENT_COLOR, name=action.action_name)
             button.rect.topleft = (size_frame_x * k + 20, size_frame_y + 20)
 
             if 26 / (k+1) >= 2:

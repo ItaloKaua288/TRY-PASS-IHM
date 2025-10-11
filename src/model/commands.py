@@ -65,3 +65,9 @@ class RepeatCommand(Command):
 
     def is_finished(self):
         return self._is_finished
+
+class EndRepeatCommand(Command):
+    action_name = "END_REPEAT"
+
+    def execute(self, game_model):
+        ...

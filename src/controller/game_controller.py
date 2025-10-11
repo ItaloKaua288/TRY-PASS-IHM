@@ -1,7 +1,7 @@
 import pygame
 
 from src.config import TILE_SIZE
-from src.model.commands import WalkCommand, TurnLeftCommand, TurnRightCommand, RepeatCommand
+from src.model.commands import WalkCommand, TurnLeftCommand, TurnRightCommand, RepeatCommand, EndRepeatCommand
 from src.model.game_model import GameState
 
 
@@ -88,6 +88,7 @@ class GameController:
                         self.model.add_action_to_sequence(TurnRightCommand())
                     case "repeat":
                         self.model.add_action_to_sequence(RepeatCommand())
+                        self.model.add_action_to_sequence(EndRepeatCommand())
 
     def _execute_handler(self, mouse_pos):
         buttons = self.view.panels["execution"].buttons
@@ -100,6 +101,10 @@ class GameController:
             if button.is_hovered:
                 self.model.remove_action_from_sequence(i)
 
+                if button.name.lower() == "repeat":
+                    self.model.remove_action_from_sequence(i)
+                elif button.name.lower() == "end_repeat":
+                    self.model.remove_action_from_sequence(i - 1)
 
         for key, button in buttons.items():
             if button.is_hovered:

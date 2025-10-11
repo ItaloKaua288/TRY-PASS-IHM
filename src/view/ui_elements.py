@@ -57,10 +57,11 @@ class TextButton(BaseButton):
 
 
 class IconButton(BaseButton):
-    def __init__(self, icon, center_pos, size, color, color_hover, border_radius=0):
+    def __init__(self, icon, center_pos, size, color, color_hover, border_radius=0, name=None):
         super().__init__()
 
         self.icon = icon
+        self.name = name
 
         self._resize_icon(size)
         self._create_surfaces(size, color, color_hover, border_radius)
