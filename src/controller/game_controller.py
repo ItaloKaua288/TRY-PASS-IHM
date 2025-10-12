@@ -11,6 +11,12 @@ class GameController:
         self.view = view
         self.tile_size = (TILE_SIZE, TILE_SIZE)
 
+        self.is_dragging = False
+        self.dragged_command = None
+        self.dragged_command_index = None
+
+        self.mouse_pressed_time_count = 0
+
         start_tile_pos = model.player.target_pos
         start_pixel_pos = (start_tile_pos[0] * self.tile_size[0], start_tile_pos[1] * self.tile_size[1])
         self.model.player.rect.topleft = start_pixel_pos
@@ -42,6 +48,10 @@ class GameController:
                     elif event.key == pygame.K_w:
                         walkcommand = WalkCommand()
                         walkcommand.execute(self.model)
+                elif self.is_dragging:
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        self.is_dragging = False
+                    self._execute_handler(mouse_pos)
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     if self.view.buttons["inventory"].rect.collidepoint(mouse_pos):
                         self._view_button_handler()
@@ -88,6 +98,7 @@ class GameController:
                         self.model.add_action_to_sequence(TurnRightCommand())
                     case "repeat":
                         self.model.add_action_to_sequence(RepeatCommand())
+                    case "end_repeat":
                         self.model.add_action_to_sequence(EndRepeatCommand())
 
     def _execute_handler(self, mouse_pos):
@@ -95,16 +106,37 @@ class GameController:
         actions_buttons = self.view.panels["execution"].buttons_sequence
 
         mouse_pos = (mouse_pos[0] - self.view.panels["execution"].rect.x + 10, mouse_pos[1] - self.view.panels["execution"].rect.y)
+        if self.is_dragging:
+            self.dragged_command[0].rect.topleft = mouse_pos
+            self.dragged_command[1].rect.topleft = mouse_pos
+            self.dragged_command[2].rect.topleft = mouse_pos
+            return
 
-        for i, button in enumerate(actions_buttons):
-            button.update(mouse_pos)
-            if button.is_hovered:
+        if self.dragged_command is not None:
+            slot_pos = self.view.panels["execution"].pos_slot_collide(mouse_pos)
+            if slot_pos[1] is not None:
+                command_index = slot_pos[1]
+                buttons_positions = self.view.panels["execution"].calculate_pos_command_buttons()[self.dragged_command_index]
+                self.dragged_command[0].rect.topleft, self.dragged_command[1].rect.topleft, self.dragged_command[2].rect.topleft = buttons_positions
+                self.model.change_command_slot(self.dragged_command_index, command_index)
+                self.dragged_command[1].is_visible = True
+                self.dragged_command[2].is_visible = True
+                self.dragged_command = None
+                self.is_dragging = False
+                self.dragged_command_index = None
+
+        for i, action_buttons in enumerate(actions_buttons):
+            command_button, change_button, cancel_button = action_buttons
+
+            if change_button.is_hovered:
+                action_buttons[1].is_visible = False
+                action_buttons[2].is_visible = False
+                self.is_dragging = True
+                self.dragged_command = action_buttons
+                self.dragged_command_index = i
+
+            elif cancel_button.is_hovered:
                 self.model.remove_action_from_sequence(i)
-
-                if button.name.lower() == "repeat":
-                    self.model.remove_action_from_sequence(i)
-                elif button.name.lower() == "end_repeat":
-                    self.model.remove_action_from_sequence(i - 1)
 
         for key, button in buttons.items():
             if button.is_hovered:

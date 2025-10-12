@@ -30,12 +30,19 @@ class GameModel:
         self.player = player.Player(level_data["player_start_pos"], assets)
         return True
 
-    def add_action_to_sequence(self, action):
+    def add_action_to_sequence(self, action, pos=-1):
         if len(self.actions_sequence) >= 26:
             return
 
         if self.game_state == GameState.CODING:
-            self.actions_sequence.append(action)
+            if pos >= 0:
+                self.actions_sequence.insert(pos, action)
+            else:
+                self.actions_sequence.append(action)
+
+    def change_command_slot(self, command_index, new_index):
+        command = self.actions_sequence.pop(command_index)
+        self.actions_sequence.insert(new_index, command)
 
     def remove_action_from_sequence(self, index):
         if self.game_state == GameState.CODING and 0 <= index < len(self.actions_sequence):

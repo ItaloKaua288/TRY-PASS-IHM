@@ -7,6 +7,7 @@ class BaseButton:
         self.is_hovered = False
         self.normal_surface = None
         self.hover_surface = None
+        self.is_visible = True
 
     def _setup_rect(self, center_pos):
         self.image = self.normal_surface
