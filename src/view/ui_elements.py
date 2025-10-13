@@ -1,5 +1,7 @@
 import pygame
 
+from src.config import WHITE_COLOR, BLACK_COLOR
+
 
 class BaseButton:
     def __init__(self):
@@ -29,16 +31,16 @@ class BaseButton:
 
 
 class TextButton(BaseButton):
-    def __init__(self, text, font, center_pos, color, color_hover, size=None, border_radius=10):
+    def __init__(self, text, font, center_pos, color, color_hover, text_color=BLACK_COLOR, text_color_hover=BLACK_COLOR, size=(None, None), border_radius=10):
         super().__init__()
         self.text = text
 
-        self._create_elements(color, color_hover, font, size, border_radius)
+        self._create_elements(color, color_hover, font, text_color, text_color_hover, size, border_radius)
         self._setup_rect(center_pos)
 
-    def _create_elements(self, color, color_hover, font, size, border_radius):
-        normal_text = font.render(self.text, True, (0, 0, 0))
-        hover_text = font.render(self.text, True, (0, 0, 0))
+    def _create_elements(self, color, color_hover, font, text_color, text_color_hover, size, border_radius):
+        normal_text = font.render(self.text, True, text_color)
+        hover_text = font.render(self.text, True, text_color_hover)
 
         width, height = size
 

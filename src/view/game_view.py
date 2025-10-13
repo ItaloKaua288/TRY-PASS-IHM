@@ -30,7 +30,7 @@ class GameView:
         }
 
         self.buttons = {
-            "inventory": TextButton("Inventário", title_font, (self.width - 105, 30), WHITE_COLOR, GRAY_COLOR,(195, 50))
+            "inventory": TextButton("Inventário", title_font, (self.width - 105, 30), WHITE_COLOR, GRAY_COLOR,size=(195, 50))
         }
 
     def update(self, mouse_pos):
