@@ -1,5 +1,5 @@
 import pygame
-from src.main import GameState
+from src.config import GameStateMap
 
 class MainMenuController:
     def __init__(self, view):
@@ -12,10 +12,8 @@ class MainMenuController:
                     if button.is_hovered:
                         match key:
                             case "new_game":
-                                game_state_manager.current_game_state = GameState.IN_GAME
+                                game_state_manager.current_game_state = GameStateMap.IN_GAME
                             case "options":
                                 print("options")
                             case "quit":
-                                game_state_manager.current_game_state = GameState.QUIT
-
-
+                                game_state_manager.current_game_state = GameStateMap.QUIT

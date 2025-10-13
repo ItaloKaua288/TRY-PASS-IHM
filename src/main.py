@@ -6,12 +6,6 @@ from model import  game_model
 from controller import game_controller, main_menu_controller
 import config
 
-class GameState:
-    MAIN_MENU = "MAIN_MENU"
-    IN_GAME = "IN_GAME"
-    LEVEL_SELECT = "LEVEL_SELECT"
-    QUIT = "QUIT"
-
 class Game:
     def __init__(self):
         pygame.init()
@@ -32,20 +26,19 @@ class Game:
         self.main_menu_controller = main_menu_controller.MainMenuController(self.main_menu_view)
         self.game_controller = game_controller.GameController(self.game_model, self.game_view)
 
-        self.current_game_state = GameState.MAIN_MENU
+        self.current_game_state = config.GameStateMap.MAIN_MENU
 
     def run(self):
-        while self.current_game_state != GameState.QUIT:
+        while self.current_game_state != config.GameStateMap.QUIT:
             events = pygame.event.get()
             mouse_pos = pygame.mouse.get_pos()
 
-            if self.current_game_state == GameState.MAIN_MENU:
+            if self.current_game_state == config.GameStateMap.MAIN_MENU:
                 self.main_menu_controller.handle_events(events, self)
-
                 self.main_menu_view.update(mouse_pos)
                 self.main_menu_view.draw()
-            elif self.current_game_state == GameState.IN_GAME:
-                self.game_controller.handle_events(events, self.game_model)
+            elif self.current_game_state == config.GameStateMap.IN_GAME:
+                self.game_controller.handle_events(events, self.game_model, self)
                 self.game_controller.run_game(mouse_pos)
                 self.game_view.draw(self.game_model, self.assets)
 
@@ -53,7 +46,7 @@ class Game:
             self.clock.tick(config.FPS)
             for event in events:
                 if event.type == pygame.QUIT:
-                    self.current_game_state = GameState.QUIT
+                    self.current_game_state = config.GameStateMap.QUIT
 
         pygame.quit()
 

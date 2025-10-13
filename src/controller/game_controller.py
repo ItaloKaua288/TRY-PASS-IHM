@@ -3,6 +3,7 @@ import pygame
 from src.config import TILE_SIZE
 from src.model.commands import WalkCommand, TurnLeftCommand, TurnRightCommand, RepeatCommand, EndRepeatCommand
 from src.model.game_model import GameState
+from src.config import GameStateMap
 
 COMMAND_MAP = {
     "walk": WalkCommand,
@@ -39,7 +40,7 @@ class GameController:
 
         self.view.update(mouse_pos)
 
-    def handle_events(self, events, game_model):
+    def handle_events(self, events, game_model, game_state_manager):
         mouse_pos = pygame.mouse.get_pos()
 
         if self.model.game_state == GameState.EXECUTING:
@@ -47,7 +48,7 @@ class GameController:
 
         for event in events:
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                self._handle_mouse_down(mouse_pos, game_model)
+                self._handle_mouse_down(mouse_pos, game_model, game_state_manager)
 
             if event.type == pygame.MOUSEMOTION and self.is_dragging:
                 self.view.panels["execution"].update_drag(mouse_pos)
@@ -55,7 +56,7 @@ class GameController:
             if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
                 self._handle_mouse_up(mouse_pos, game_model)
 
-    def _handle_mouse_down(self, mouse_pos, game_model):
+    def _handle_mouse_down(self, mouse_pos, game_model, game_state_manager):
         for key, button in self.view.buttons.items():
             if button.rect.collidepoint(mouse_pos):
                 if key == "inventory":
@@ -68,6 +69,8 @@ class GameController:
                     self._handle_tools_panel_click(mouse_pos)
                 elif key == "execution":
                     self._handle_execution_panel_click(mouse_pos, game_model)
+                elif key == "top_bar":
+                    self._handle_top_bar_panel_click(game_state_manager)
                 return
 
     def _handle_mouse_up(self, mouse_pos, game_model):
@@ -86,7 +89,17 @@ class GameController:
         inventory_panel = self.view.panels["inventory"]
         inventory_panel.is_visible = not inventory_panel.is_visible
 
-    def _handle_tools_panel_click(self, mouse_pos: tuple):
+    def _handle_top_bar_panel_click(self, game_state_manager):
+        topbar_panel = self.view.panels["top_bar"]
+
+        for key, button in topbar_panel.buttons.items():
+            if button.is_hovered:
+                if key == "options":
+                    game_state_manager.current_game_state = GameStateMap.MAIN_MENU
+                else:
+                    print(key)
+
+    def _handle_tools_panel_click(self, mouse_pos):
         tools_panel = self.view.panels["tools"]
 
         for key, button in tools_panel.buttons.items():
