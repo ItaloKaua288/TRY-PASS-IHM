@@ -4,142 +4,111 @@ from src.config import TILE_SIZE
 from src.model.commands import WalkCommand, TurnLeftCommand, TurnRightCommand, RepeatCommand, EndRepeatCommand
 from src.model.game_model import GameState
 
+COMMAND_MAP = {
+    "walk": WalkCommand,
+    "turn_left": TurnLeftCommand,
+    "turn_right": TurnRightCommand,
+    "repeat": RepeatCommand,
+    "end_repeat": EndRepeatCommand,
+}
 
 class GameController:
     def __init__(self, model, view):
         self.model = model
         self.view = view
-        self.tile_size = (TILE_SIZE, TILE_SIZE)
 
         self.is_dragging = False
-        self.dragged_command = None
         self.dragged_command_index = None
 
-        self.mouse_pressed_time_count = 0
+        self._initialize_player_position()
 
-        start_tile_pos = model.player.target_pos
-        start_pixel_pos = (start_tile_pos[0] * self.tile_size[0], start_tile_pos[1] * self.tile_size[1])
-        self.model.player.rect.topleft = start_pixel_pos
+    def _initialize_player_position(self):
+        start_tile_pos = self.model.player.target_pos
+        pixel_pos = (start_tile_pos[0] * TILE_SIZE, start_tile_pos[1] * TILE_SIZE)
+        self.model.player.rect.topleft = pixel_pos
+        self.model.player.transform_size((TILE_SIZE, TILE_SIZE))
 
-        self._setup_init()
+    def run_game(self, mouse_pos):
+        if self.model.game_state == GameState.EXECUTING and not self.model.player.is_moving:
+            if self.model.actions_sequence:
+                self.model.actions_sequence.pop(0).execute(self.model)
+            else:
+                self.model.game_state = GameState.CODING
 
-    def _setup_init(self):
-        self.model.player.transform_size(self.tile_size)
-
-    def update_elements(self, mouse_pos):
         self.model.update()
+
         self.view.update(mouse_pos)
 
-    def handle_events(self, events, mouse_pos):
-        if self.model.game_state == GameState.EXECUTING and not self.model.player.is_moving:
-            self.model.actions_sequence.pop(0).execute(self.model)
+    def handle_events(self, events, game_model):
+        mouse_pos = pygame.mouse.get_pos()
 
-            if len(self.model.actions_sequence) == 0:
-                self.model.game_state = GameState.CODING
-        else:
-            for event in events:
-                if event.type == pygame.KEYDOWN and not self.model.player.is_moving:
-                    if event.key == pygame.K_a:
-                        turnrightcommand = TurnRightCommand()
-                        turnrightcommand.execute(self.model)
-                    elif event.key == pygame.K_d:
-                        turnleftcommand = TurnLeftCommand()
-                        turnleftcommand.execute(self.model)
-                    elif event.key == pygame.K_w:
-                        walkcommand = WalkCommand()
-                        walkcommand.execute(self.model)
-                elif self.is_dragging:
-                    if event.type == pygame.MOUSEBUTTONDOWN:
-                        self.is_dragging = False
-                    self._execute_handler(mouse_pos)
-                elif event.type == pygame.MOUSEBUTTONDOWN:
-                    if self.view.buttons["inventory"].rect.collidepoint(mouse_pos):
-                        self._view_button_handler()
-                    elif self.view.panels["top_bar"].rect.collidepoint(mouse_pos):
-                        self._top_bar_handler()
-                    elif self.view.panels["tools"].rect.collidepoint(mouse_pos):
-                        self._tools_handler()
-                    elif self.view.panels["execution"].rect.collidepoint(mouse_pos):
-                        self._execute_handler(mouse_pos)
-
-    def _view_button_handler(self):
-        button = self.view.buttons["inventory"]
-        if button.is_hovered:
-            inventory_panel = self.view.panels["inventory"]
-            if inventory_panel.is_visible:
-                inventory_panel.is_visible = False
-            else:
-                inventory_panel.is_visible = True
-
-    def _top_bar_handler(self):
-        buttons = self.view.panels["top_bar"].buttons
-
-        for key, button in buttons.items():
-            if button.is_hovered:
-                match key:
-                    case "options":
-                        print("Options")
-                    case "idea":
-                        print("Idea")
-                    case "music_note":
-                        print("Music note")
-
-    def _tools_handler(self):
-        buttons = self.view.panels["tools"].buttons
-
-        for key, button in buttons.items():
-            if button.is_hovered:
-                match key:
-                    case "walk":
-                        self.model.add_action_to_sequence(WalkCommand())
-                    case "turn_left":
-                        self.model.add_action_to_sequence(TurnLeftCommand())
-                    case "turn_right":
-                        self.model.add_action_to_sequence(TurnRightCommand())
-                    case "repeat":
-                        self.model.add_action_to_sequence(RepeatCommand())
-                    case "end_repeat":
-                        self.model.add_action_to_sequence(EndRepeatCommand())
-
-    def _execute_handler(self, mouse_pos):
-        buttons = self.view.panels["execution"].buttons
-        actions_buttons = self.view.panels["execution"].buttons_sequence
-
-        mouse_pos = (mouse_pos[0] - self.view.panels["execution"].rect.x + 10, mouse_pos[1] - self.view.panels["execution"].rect.y)
-        if self.is_dragging:
-            self.dragged_command[0].rect.topleft = mouse_pos
-            self.dragged_command[1].rect.topleft = mouse_pos
-            self.dragged_command[2].rect.topleft = mouse_pos
+        if self.model.game_state == GameState.EXECUTING:
             return
 
-        if self.dragged_command is not None:
-            slot_pos = self.view.panels["execution"].pos_slot_collide(mouse_pos)
-            if slot_pos[1] is not None:
-                command_index = slot_pos[1]
-                buttons_positions = self.view.panels["execution"].calculate_pos_command_buttons()[self.dragged_command_index]
-                self.dragged_command[0].rect.topleft, self.dragged_command[1].rect.topleft, self.dragged_command[2].rect.topleft = buttons_positions
-                self.model.change_command_slot(self.dragged_command_index, command_index)
-                self.dragged_command[1].is_visible = True
-                self.dragged_command[2].is_visible = True
-                self.dragged_command = None
-                self.is_dragging = False
-                self.dragged_command_index = None
+        for event in events:
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                self._handle_mouse_down(mouse_pos, game_model)
 
-        for i, action_buttons in enumerate(actions_buttons):
-            command_button, change_button, cancel_button = action_buttons
+            if event.type == pygame.MOUSEMOTION and self.is_dragging:
+                self.view.panels["execution"].update_drag(mouse_pos)
 
-            if change_button.is_hovered:
-                action_buttons[1].is_visible = False
-                action_buttons[2].is_visible = False
-                self.is_dragging = True
-                self.dragged_command = action_buttons
-                self.dragged_command_index = i
+            if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+                self._handle_mouse_up(mouse_pos, game_model)
 
-            elif cancel_button.is_hovered:
-                self.model.remove_action_from_sequence(i)
+    def _handle_mouse_down(self, mouse_pos, game_model):
+        for key, button in self.view.buttons.items():
+            if button.rect.collidepoint(mouse_pos):
+                if key == "inventory":
+                    self._toggle_inventory_visibility()
+                    return
 
-        for key, button in buttons.items():
+        for key, panel in self.view.panels.items():
+            if panel.rect.collidepoint(mouse_pos):
+                if key == "tools":
+                    self._handle_tools_panel_click(mouse_pos)
+                elif key == "execution":
+                    self._handle_execution_panel_click(mouse_pos, game_model)
+                return
+
+    def _handle_mouse_up(self, mouse_pos, game_model):
+        if self.is_dragging:
+            execution_panel = self.view.panels["execution"]
+            target_slot_index = execution_panel.get_slot_index(mouse_pos)
+
+            if target_slot_index is not None and self.dragged_command_index is not None:
+                self.model.change_command_slot(self.dragged_command_index, target_slot_index)
+
+            self.is_dragging = False
+            self.dragged_command_index = None
+            execution_panel.stop_drag(mouse_pos, game_model)
+
+    def _toggle_inventory_visibility(self):
+        inventory_panel = self.view.panels["inventory"]
+        inventory_panel.is_visible = not inventory_panel.is_visible
+
+    def _handle_tools_panel_click(self, mouse_pos: tuple):
+        tools_panel = self.view.panels["tools"]
+
+        for key, button in tools_panel.buttons.items():
             if button.is_hovered:
-                match key:
-                    case "execute":
-                        self.model.start_execution()
+                if command_class := COMMAND_MAP.get(key):
+                    self.model.add_action_to_sequence(command_class())
+                    return
+
+    def _handle_execution_panel_click(self, mouse_pos, game_model):
+        execution_panel = self.view.panels["execution"]
+
+        if execution_panel.buttons["execute"].is_hovered:
+            self.model.game_state = GameState.EXECUTING
+            return
+
+        clicked_info = execution_panel.get_clicked_command_info(mouse_pos)
+        if clicked_info:
+            index, action_type = clicked_info["index"], clicked_info["action"]
+
+            if action_type == "cancel_button":
+                self.model.remove_action_from_sequence(index)
+            elif action_type == "change_button":
+                self.is_dragging = True
+                self.dragged_command_index = index
+                execution_panel.start_drag(index, mouse_pos, game_model)

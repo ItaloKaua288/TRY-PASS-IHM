@@ -14,6 +14,8 @@ class GameModel:
         self.tile_map = []
         self.walkable_tiles = {9, 10}
 
+        self.running = True
+
         self.available_actions = ["RIGHT", "LEFT", "WALK"]
         self.actions_sequence = []
 
@@ -21,7 +23,6 @@ class GameModel:
 
     def load_level(self, level_filepath, assets):
         level_data = assets.get_level_data(level_filepath)
-
         if not level_data:
             return False
 

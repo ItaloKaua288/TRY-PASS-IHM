@@ -5,10 +5,12 @@ from os import path, listdir
 
 from src import config
 
+from pathlib import Path
+
 
 class AssetsManager:
     def __init__(self):
-        self.base_path = path.dirname(path.dirname(__file__))
+        self.base_path = Path(__file__).parent.parent
         self.assets_path = path.join(self.base_path, 'src', 'assets')
         self.images = {}
         self.fonts = {}
@@ -19,7 +21,10 @@ class AssetsManager:
     def get_font(self, name, size):
         key = f"{name}_{size}"
         if key not in self.fonts:
-            self.fonts[key] = pygame.font.SysFont(name, size, True)
+            try:
+                self.fonts[key] = pygame.font.SysFont(name, size, True)
+            except pygame.error:
+                self.fonts[key] = pygame.font.SysFont(None, size)
         return self.fonts[key]
 
     def get_image(self, relative_path):
@@ -32,18 +37,12 @@ class AssetsManager:
         if relative_path not in self.tilesets:
             self.tilesets[relative_path] = {}
             folder_path = path.join(self.assets_path, relative_path)
+
             for filename in listdir(folder_path):
                 tile_id = int(filename.split('_')[1].split('.')[0])
                 surface = self.get_image(path.join(relative_path, filename))
-                # self.tilesets[relative_path][tile_id] = pygame.transform.smoothscale(surface, tile_size)
                 self.tilesets[relative_path][tile_id] = pygame.transform.smoothscale(surface, (config.TILE_SIZE, config.TILE_SIZE))
         return self.tilesets[relative_path]
-
-    def get_frames(self, relative_path):
-        if relative_path not in self.frames:
-            full_path = path.join(self.assets_path, relative_path)
-            self.frames[relative_path] = pygame.image.load(full_path).convert_alpha()
-        return self.frames[relative_path]
 
     def get_level_data(self, relative_path):
         if relative_path not in self.level_data:

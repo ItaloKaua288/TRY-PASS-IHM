@@ -6,37 +6,41 @@ from model import  game_model
 from controller import game_controller
 import config
 
-pygame.init()
-screen = pygame.display.set_mode((config.SCREEN_WIDTH, config.SCREEN_HEIGHT))
+class Game:
+    def __init__(self):
+        pygame.init()
+        self.screen = pygame.display.set_mode((config.SCREEN_WIDTH, config.SCREEN_HEIGHT))
+        self.clock = pygame.time.Clock()
 
-assets = assets_manager.AssetsManager()
+        self.assets = assets_manager.AssetsManager()
 
-pygame.display.set_icon(assets.get_image(r"icons\logo.png"))
-pygame.display.set_caption("TRY:PASS")
-clock = pygame.time.Clock()
+        pygame.display.set_caption("TRY:PASS")
+        pygame.display.set_icon(self.assets.get_image(r"icons/logo.png"))
 
-game_model = game_model.GameModel()
-game_model.load_level("src/level_data/level_data_2.json", assets)
+        self.game_model = game_model.GameModel()
+        self.game_model.load_level("src/level_data/level_data_2.json", self.assets)
+        self.view = game_view.GameView(self.screen, self.assets, self.game_model)
 
-game_view = game_view.GameView(screen, assets, game_model)
-game_controller = game_controller.GameController(game_model, game_view)
+        self.controller = game_controller.GameController(self.game_model, self.view)
 
-running = True
-while running:
-    clock.tick(config.FPS)
+    def run(self):
+        while self.game_model.running:
+            events = pygame.event.get()
+            self.controller.handle_events(events, self.game_model)
 
-    events = pygame.event.get()
-    mouse_pos = pygame.mouse.get_pos()
+            mouse_pos = pygame.mouse.get_pos()
+            self.controller.run_game(mouse_pos)
+            self.view.draw(self.game_model, self.assets)
 
-    game_view.draw(game_model, assets)
-    game_controller.update_elements(mouse_pos)
-    game_controller.handle_events(events, mouse_pos)
+            pygame.display.flip()
+            self.clock.tick(config.FPS)
 
-    for event in events:
-        if event.type == pygame.QUIT:
-            running = False
+            for event in events:
+                if event.type == pygame.QUIT:
+                    self.game_model.running = False
 
-    pygame.display.flip()
+        pygame.quit()
 
-pygame.quit()
-
+if __name__ == "__main__":
+    game = Game()
+    game.run()
