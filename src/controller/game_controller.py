@@ -57,16 +57,10 @@ class GameController:
                 self._handle_mouse_up(mouse_pos, game_model)
 
     def _handle_mouse_down(self, mouse_pos, game_model, game_state_manager):
-        for key, button in self.view.buttons.items():
-            if button.rect.collidepoint(mouse_pos):
-                if key == "inventory":
-                    self._toggle_inventory_visibility()
-                    return
-
         for key, panel in self.view.panels.items():
             if panel.rect.collidepoint(mouse_pos):
                 if key == "tools":
-                    self._handle_tools_panel_click(mouse_pos)
+                    self._handle_tools_panel_click()
                 elif key == "execution":
                     self._handle_execution_panel_click(mouse_pos, game_model)
                 elif key == "top_bar":
@@ -96,10 +90,12 @@ class GameController:
             if button.is_hovered:
                 if key == "options":
                     game_state_manager.current_game_state = GameStateMap.MAIN_MENU
+                elif key == "inventory":
+                    self._toggle_inventory_visibility()
                 else:
                     print(key)
 
-    def _handle_tools_panel_click(self, mouse_pos):
+    def _handle_tools_panel_click(self):
         tools_panel = self.view.panels["tools"]
 
         for key, button in tools_panel.buttons.items():
@@ -118,10 +114,13 @@ class GameController:
         clicked_info = execution_panel.get_clicked_command_info(mouse_pos)
         if clicked_info:
             index, action_type = clicked_info["index"], clicked_info["action"]
-
             if action_type == "cancel_button":
                 self.model.remove_action_from_sequence(index)
-            elif action_type == "change_button":
+            else:
                 self.is_dragging = True
                 self.dragged_command_index = index
                 execution_panel.start_drag(index, mouse_pos, game_model)
+            # elif action_type == "change_button":
+            #     self.is_dragging = True
+            #     self.dragged_command_index = index
+            #     execution_panel.start_drag(index, mouse_pos, game_model)

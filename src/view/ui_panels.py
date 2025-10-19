@@ -1,12 +1,12 @@
 import pygame
-from .ui_elements import IconButton
+from .ui_elements import IconButton, TextButton
 from . import  camera
 
-from src.config import TILE_SIZE, BLACK_COLOR, WHITE_COLOR, GRAY_COLOR, LIGHT_GREEN_COLOR, DARK_GRAY_COLOR, TRANSPARENT_COLOR
+from src import config
 
 
 class BasePanel:
-    def __init__(self, size, topleft_pos, title_text=None, font=None, bg_color=WHITE_COLOR, title_color=BLACK_COLOR,
+    def __init__(self, size, topleft_pos, title_text=None, font=None, bg_color=config.WHITE_COLOR, title_color=config.BLACK_COLOR,
                  border_radius=10, is_visible=True):
         self.width, self.height = size
         self.image = pygame.Surface(size, pygame.SRCALPHA)
@@ -30,7 +30,7 @@ class BasePanel:
 class MapPanel:
     def __init__(self, size, pos, tile_map_data, assets):
         self.width, self.height = size
-        self.tile_size = (TILE_SIZE, TILE_SIZE)
+        self.tile_size = (config.TILE_SIZE, config.TILE_SIZE)
         self.image = pygame.Surface(size, pygame.SRCALPHA)
         self.rect = self.image.get_rect(topleft=pos)
 
@@ -52,7 +52,7 @@ class MapPanel:
         return map_surface
 
     def draw(self, screen, model, assets):
-        self.image.fill(BLACK_COLOR)
+        self.image.fill(config.BLACK_COLOR)
         self.camera.update(model.player.rect)
 
         self.image.blit(self.static_map_image, self.camera.apply_offset(self.static_map_image.get_rect()))
@@ -64,7 +64,7 @@ class MapPanel:
 
 class TopBarPanel(BasePanel):
     def __init__(self, size, pos, font, objective_text, assets):
-        super().__init__(size, pos, bg_color=TRANSPARENT_COLOR)
+        super().__init__(size, pos, bg_color=config.TRANSPARENT_COLOR)
         self.font = font
         self.objective_text = objective_text
 
@@ -74,17 +74,18 @@ class TopBarPanel(BasePanel):
     def _create_buttons(self, assets):
         center_y = self.height // 2
         self.buttons = {
-            "options": IconButton(assets.get_image("icons/options.png"), (30, center_y), (40, 40), GRAY_COLOR, DARK_GRAY_COLOR, border_radius=50),
-            "idea": IconButton(assets.get_image("icons/idea.png"), (self.width - 80, center_y), (40, 40), GRAY_COLOR, DARK_GRAY_COLOR, border_radius=50),
-            "music": IconButton(assets.get_image("icons/music_note.png"), (self.width - 30, center_y), (40, 40), GRAY_COLOR, DARK_GRAY_COLOR, border_radius=50)
+            "options": IconButton(assets.get_image("icons/options.png"), (30, center_y), (40, 40), config.GRAY_COLOR, config.DARK_GRAY_COLOR, border_radius=10),
+            "idea": IconButton(assets.get_image("icons/idea.png"), (self.width - 130, center_y), (40, 40), config.GRAY_COLOR, config.DARK_GRAY_COLOR, border_radius=10),
+            "music": IconButton(assets.get_image("icons/music_note.png"), (self.width - 80, center_y), (40, 40), config.GRAY_COLOR, config.DARK_GRAY_COLOR, border_radius=10),
+            "inventory": IconButton(assets.get_image("icons/bag.png"), (self.width - 30, center_y), (40, 40), config.GRAY_COLOR, config.DARK_GRAY_COLOR,10)
         }
 
     def _draw_static_elements(self):
-        bg_objective_rect = pygame.Rect(0, 0, 550, self.height - 10)
+        bg_objective_rect = pygame.Rect(0, 0, 400, self.height - 10)
         bg_objective_rect.center = (self.width // 2, self.height // 2)
-        pygame.draw.rect(self.image, WHITE_COLOR, bg_objective_rect, border_radius=10)
+        pygame.draw.rect(self.image, config.WHITE_COLOR, bg_objective_rect, border_radius=10)
 
-        text_surface = self.font.render(self.objective_text, True, BLACK_COLOR)
+        text_surface = self.font.render(self.objective_text, True, config.BLACK_COLOR)
         self.image.blit(text_surface, text_surface.get_rect(center=bg_objective_rect.center))
 
         for button in self.buttons.values():
@@ -117,18 +118,18 @@ class InventoryPanel(BasePanel):
 
 class ToolsPanel(BasePanel):
     def __init__(self, size, pos, font, assets):
-        super().__init__(size, pos, "CAIXA DE FERRAMENTAS", font)
+        super().__init__(size, pos, "FERRAMENTAS", font)
 
         self._create_buttons(assets)
         self._draw_buttons_on_panel()
 
     def _create_buttons(self, assets):
         self.buttons = {
-            "walk": IconButton(assets.get_image("icons/walk.png"), (30, 55), (50, 50), GRAY_COLOR, DARK_GRAY_COLOR, border_radius=10),
-            "turn_right": IconButton(assets.get_image("icons/turn_right.png"), (85, 55), (50, 50), GRAY_COLOR, DARK_GRAY_COLOR, border_radius=10),
-            "turn_left": IconButton(assets.get_image("icons/turn_left.png"), (140, 55), (50, 50), GRAY_COLOR, DARK_GRAY_COLOR, border_radius=10),
-            "repeat": IconButton(assets.get_image("icons/repeat.png"), (30, 110), (50, 50), GRAY_COLOR, DARK_GRAY_COLOR, border_radius=10),
-            "end_repeat": IconButton(assets.get_image("icons/end_repeat.png"), (85, 110), (50, 50), GRAY_COLOR, DARK_GRAY_COLOR, border_radius=10)
+            "walk": IconButton(assets.get_image("icons/walk.png"), (30, 55), (50, 50), config.GRAY_COLOR, config.DARK_GRAY_COLOR, border_radius=10),
+            "turn_right": IconButton(assets.get_image("icons/turn_right.png"), (85, 55), (50, 50), config.GRAY_COLOR, config.DARK_GRAY_COLOR, border_radius=10),
+            "turn_left": IconButton(assets.get_image("icons/turn_left.png"), (140, 55), (50, 50), config.GRAY_COLOR, config.DARK_GRAY_COLOR, border_radius=10),
+            "repeat": IconButton(assets.get_image("icons/repeat.png"), (30, 110), (50, 50), config.GRAY_COLOR, config.DARK_GRAY_COLOR, border_radius=10),
+            "end_repeat": IconButton(assets.get_image("icons/end_repeat.png"), (85, 110), (50, 50), config.GRAY_COLOR, config.DARK_GRAY_COLOR, border_radius=10)
         }
 
     def _draw_buttons_on_panel(self):
@@ -155,8 +156,11 @@ class ExecutionPanel(BasePanel):
         self.EXECUTION_ROWS_NUM = 2
         self.EXECUTION_COLS_NUM = 13
 
-        self.slot_width = (self.width - (self.EXECUTION_COLS_NUM + 1) * 10) // self.EXECUTION_COLS_NUM
-        self.slot_height = (self.height - 10 - (self.EXECUTION_ROWS_NUM + 1) * 10) // self.EXECUTION_ROWS_NUM
+        # self.slot_width = (self.width - (self.EXECUTION_COLS_NUM + 1) * 10) // self.EXECUTION_COLS_NUM
+        # self.slot_height = (self.height - 10 - (self.EXECUTION_ROWS_NUM + 1) * 10) // self.EXECUTION_ROWS_NUM
+
+        self.slot_width = 40
+        self.slot_height = 40
 
         self.slot_rects = self._calculate_slot_rects()
         self.static_background = self._create_static_background()
@@ -185,7 +189,8 @@ class ExecutionPanel(BasePanel):
 
     def _create_buttons(self, assets):
         self.buttons = {
-            "execute": IconButton(assets.get_image("icons/play.png"), (self.width - 30, self.height // 2), (40, self.height - 10), LIGHT_GREEN_COLOR, GRAY_COLOR, 100),
+            "execute": IconButton(assets.get_image("icons/play.png"), (self.width - 30, 30), (50, 50), config.LIGHT_GREEN_COLOR, config.GRAY_COLOR, 10),
+            "cancel": IconButton(assets.get_image("icons/trash.png"), (self.width - 30, 90), (50, 50), config.RED_COLOR, config.GRAY_COLOR, 10)
         }
 
     def _create_static_background(self):
@@ -204,28 +209,23 @@ class ExecutionPanel(BasePanel):
 
         for i, action in enumerate(model_actions):
             command_button_icon = self.assets.get_image(f"icons/{action.action_name.lower()}.png")
-            change_button_icon = self.assets.get_image(f"icons/change.png")
+            # change_button_icon = self.assets.get_image(f"icons/change.png")
             cancel_button_icon = self.assets.get_image(f"icons/cancel.png")
             command_pos = self.slot_rects[i].topleft
-            cancel_pos = (command_pos[0] + 48, command_pos[1])
+            cancel_pos = (command_pos[0] + 25, command_pos[1])
             size = (self.slot_width, self.slot_height)
 
             if i < len(self.command_buttons):
-                # self.command_buttons[i].update_icon(icon)
                 self.command_buttons[i][0].rect.topleft = command_pos
-                self.command_buttons[i][1].rect.topleft = command_pos
-                self.command_buttons[i][2].rect.topleft = cancel_pos
+                self.command_buttons[i][1].rect.topleft = cancel_pos
                 pass
             else:
-                command_button = IconButton(command_button_icon, command_pos, size, TRANSPARENT_COLOR, TRANSPARENT_COLOR, name=action.action_name)
-                change_button = IconButton(change_button_icon, command_pos, (20, 20), GRAY_COLOR, GRAY_COLOR,
-                                           name="change_button")
-                cancel_button = IconButton(cancel_button_icon, cancel_pos, (20, 20), GRAY_COLOR, GRAY_COLOR,
+                command_button = IconButton(command_button_icon, command_pos, size, config.TRANSPARENT_COLOR, config.TRANSPARENT_COLOR, name=action.action_name)
+                cancel_button = IconButton(cancel_button_icon, cancel_pos, (15, 15), config.GRAY_COLOR, config.GRAY_COLOR,
                                            name="cancel_button")
                 command_button.rect.topleft = command_pos
-                change_button.rect.topleft = command_pos
                 cancel_button.rect.topleft = cancel_pos
-                self.command_buttons.append((command_button, change_button, cancel_button))
+                self.command_buttons.append((command_button, cancel_button))
 
         self._current_command_signature = "".join([a.action_name for a in model_actions])
 
@@ -233,11 +233,11 @@ class ExecutionPanel(BasePanel):
         local_pos = (mouse_pos[0] - self.rect.x, mouse_pos[1] - self.rect.y)
         for key, buttons in enumerate(self.command_buttons):
             button_info = {"index": key}
-            if buttons[1].rect.collidepoint(local_pos):
-                button_info["action"] = buttons[1].name
-                return button_info
-            elif buttons[2].rect.collidepoint(local_pos):
-                button_info["action"] = buttons[2].name
+            if buttons[0].rect.collidepoint(local_pos):
+                if buttons[1].rect.collidepoint(local_pos):
+                    button_info["action"] = buttons[1].name
+                else:
+                    button_info["action"] = buttons[0].name
                 return button_info
         return None
 
@@ -270,7 +270,8 @@ class ExecutionPanel(BasePanel):
 
     def update(self, mouse_pos):
         local_pos = (mouse_pos[0] - self.rect.x, mouse_pos[1] - self.rect.y)
-        self.buttons["execute"].update(local_pos)
+        for button in self.buttons.values():
+            button.update(local_pos)
 
         model_signature = "".join([a.action_name for a in self.game_model.actions_sequence])
         if model_signature != self._current_command_signature:
@@ -294,6 +295,7 @@ class ExecutionPanel(BasePanel):
                 button.draw(self.image)
 
         self.buttons["execute"].draw(self.image)
+        self.buttons["cancel"].draw(self.image)
 
         screen.blit(self.image, self.rect)
 
@@ -304,3 +306,32 @@ class ExecutionPanel(BasePanel):
                 col_index = i // 12
                 return (row_index, col_index), i
         return None, None
+
+class OptionsPanel(BasePanel):
+    def __init__(self, size, pos, font, assets):
+        super().__init__(size, pos, "Opções", font, is_visible=False)
+
+        self.rect.x -= self.width // 2
+        self.rect.y -= self.height // 2
+
+        self.buttons = {}
+        self._create_buttons(assets)
+
+    def _create_buttons(self, assets):
+        self.buttons = {
+            "close": IconButton(assets.get_image("icons/cancel.png"), (self.width - 15, 15), (20, 20), config.GRAY_COLOR, config.DARK_GRAY_COLOR, border_radius=5)
+        }
+
+    def update(self, mouse_pos):
+        local_pos = (mouse_pos[0] - self.rect.x, mouse_pos[1] - self.rect.y)
+
+        for button in self.buttons.values():
+            button.update(local_pos)
+
+    def draw(self, screen, model, assets=None):
+        # super().draw(self.image, model)
+        if self.is_visible:
+            for button in self.buttons.values():
+                button.draw(self.image)
+
+            screen.blit(self.image, self.rect)

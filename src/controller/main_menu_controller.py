@@ -14,6 +14,21 @@ class MainMenuController:
                             case "new_game":
                                 game_state_manager.current_game_state = GameStateMap.IN_GAME
                             case "options":
-                                print("options")
+                                self._toggle_visibility_options()
                             case "quit":
                                 game_state_manager.current_game_state = GameStateMap.QUIT
+                    else:
+                        if self.view.panels["options"].is_visible:
+                            self._handle_options(game_state_manager)
+
+    def _toggle_visibility_options(self):
+        self.view.panels["options"].is_visible = not self.view.panels["options"].is_visible
+
+    def _handle_options(self, game_state_manager):
+        buttons = self.view.panels["options"].buttons
+
+        for key, button in buttons.items():
+            if button.is_hovered:
+                match key:
+                    case "close":
+                        self.view.panels["options"].is_visible = False

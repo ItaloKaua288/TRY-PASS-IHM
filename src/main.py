@@ -26,7 +26,7 @@ class Game:
         self.main_menu_controller = main_menu_controller.MainMenuController(self.main_menu_view)
         self.game_controller = game_controller.GameController(self.game_model, self.game_view)
 
-        self.current_game_state = config.GameStateMap.MAIN_MENU
+        self.current_game_state = config.GameStateMap.IN_GAME
 
     def run(self):
         while self.current_game_state != config.GameStateMap.QUIT:

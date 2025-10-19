@@ -1,5 +1,6 @@
 import pygame
 from src.view.ui_elements import TextButton
+from src.view.ui_panels import OptionsPanel
 from src.config import TRANSPARENT_COLOR, WHITE_COLOR, GRAY_COLOR, BLACK_COLOR
 
 class MainMenuView:
@@ -9,8 +10,10 @@ class MainMenuView:
 
         self.image = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
 
+        self.panels = {}
         self.buttons = {}
         self._create_buttons(assets)
+        self._create_panels(assets)
         self._create_static_elements(assets)
 
     def _create_buttons(self, assets):
@@ -24,6 +27,11 @@ class MainMenuView:
             "quit": TextButton("Sair", menu_font, (center_x, center_y + 75), TRANSPARENT_COLOR, TRANSPARENT_COLOR, text_color=WHITE_COLOR, text_color_hover=GRAY_COLOR)
         }
 
+    def _create_panels(self, assets):
+        self.panels = {
+            "options": OptionsPanel((400, 200), (self.width // 2, self.height // 2), assets.get_font("Monospace", 20), assets),
+        }
+
     def _create_static_elements(self, assets):
         self.sprite_character = assets.get_image("sprites/main_character/idle_0.png").copy()
         self.sprite_character.set_alpha(40)
@@ -35,6 +43,9 @@ class MainMenuView:
         for button in self.buttons.values():
             button.update(mouse_pos)
 
+        for panel in self.panels.values():
+            panel.update(mouse_pos)
+
     def draw(self):
         self.image.fill(BLACK_COLOR)
 
@@ -45,5 +56,8 @@ class MainMenuView:
 
         for button in self.buttons.values():
             button.draw(self.image)
+
+        for panel in self.panels.values():
+            panel.draw(self.image, None)
 
         self.screen.blit(self.image, (0, 0))
