@@ -18,6 +18,7 @@ class GameModel:
 
         self.available_actions = ["RIGHT", "LEFT", "WALK"]
         self.actions_sequence = []
+        self.current_action_index = -1
 
         self.game_state = GameState.CODING
 
@@ -29,6 +30,7 @@ class GameModel:
         self.tile_map = level_data["tile_map"]
         self.objective_text = level_data["objective_text"]
         self.player = player.Player(level_data["player_start_pos"], assets)
+        self.interactable_objects = level_data["interactable_objects"]
         return True
 
     def add_action_to_sequence(self, action, pos=-1):
@@ -50,15 +52,20 @@ class GameModel:
             self.actions_sequence.pop(index)
 
     def start_execution(self):
-        if self.game_state == GameState.CODING and self.actions_sequence:
+        if self.game_state == GameState.CODING and len(self.actions_sequence) > 0:
             self.game_state = GameState.EXECUTING
 
     def reset_sequence(self):
+        for action in self.actions_sequence:
+            action.is_finished = False
+            self.current_action_index = -1
+
+    def clear_sequence(self):
         self.actions_sequence.clear()
         self.game_state = GameState.CODING
 
     def update(self):
-        self.player.update_movement()
+        # self.player.update_movement()
         self.player.update()
 
     def is_valid_move(self, pos_pixels):

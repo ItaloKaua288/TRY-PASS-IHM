@@ -1,15 +1,12 @@
 from abc import abstractmethod, ABC
 
-from src.config import TILE_SIZE
-
-
 class Command(ABC):
+    is_finished = False
+    is_executing = False
     @abstractmethod
     def execute(self, model):
         pass
 
-    def is_finished(self):
-        return True
 
 class WalkCommand(Command):
     action_name = "WALK"
@@ -19,6 +16,8 @@ class WalkCommand(Command):
         if game_model.is_valid_move((next_tile_pos_x, next_tile_pos_y)):
             game_model.player.set_next_move()
             game_model.remove_action_from_sequence(0)
+        self.is_finished = True
+
 
 class TurnLeftCommand(Command):
     action_name = "TURN_LEFT"
@@ -26,7 +25,11 @@ class TurnLeftCommand(Command):
         player = game_model.player
         if not player.is_moving:
             player.direction_index = (player.direction_index - 1) % len(player.directions)
+            player.is_rotating = True
+            player.target_angle = player.target_angles[player.direction_index]
             game_model.remove_action_from_sequence(0)
+            self.is_finished = True
+
 
 class TurnRightCommand(Command):
     action_name = "TURN_RIGHT"
@@ -35,6 +38,7 @@ class TurnRightCommand(Command):
         if not player.is_moving:
             player.direction_index = (player.direction_index + 1) % len(player.directions)
             game_model.remove_action_from_sequence(0)
+            self.is_finished = True
 
 class RepeatCommand(Command):
     def __init__(self, repeat_num=1):

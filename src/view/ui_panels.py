@@ -1,5 +1,5 @@
 import pygame
-from .ui_elements import IconButton, TextButton
+from .ui_elements import IconButton
 from . import  camera
 
 from src import config
@@ -28,18 +28,21 @@ class BasePanel:
 
 
 class MapPanel:
-    def __init__(self, size, pos, tile_map_data, assets):
+    def __init__(self, size, pos, model, assets):
         self.width, self.height = size
         self.tile_size = (config.TILE_SIZE, config.TILE_SIZE)
         self.image = pygame.Surface(size, pygame.SRCALPHA)
         self.rect = self.image.get_rect(topleft=pos)
 
+        self.static_map_image = self._pre_render_map(model, assets)
+
+        self.camera = camera.Camera((self.width, self.height), self.static_map_image.get_size(), pos)
+
+    def _pre_render_map(self, model, assets):
         tile_set = assets.get_tileset("sprites/tiles_map", self.tile_size)
-        self.static_map_image = self._pre_render_map(tile_map_data, tile_set)
+        tile_map_data = model.tile_map
+        interactable_objects = model.interactable_objects
 
-        self.camera = camera.Camera((self.width, self.height), self.static_map_image.get_size())
-
-    def _pre_render_map(self, tile_map_data, tile_set):
         map_width = len(tile_map_data[0]) * self.tile_size[0]
         map_height = len(tile_map_data) * self.tile_size[1]
         map_surface = pygame.Surface((map_width, map_height))
@@ -49,11 +52,31 @@ class MapPanel:
                 pos = (self.tile_size[0] * j, self.tile_size[1] * i)
                 if tile_id in tile_set:
                     map_surface.blit(tile_set[tile_id], pos)
+
+        self.interactable_objects_rects = {}
+        for key, item in interactable_objects.items():
+            self.interactable_objects_rects[key] = []
+            item_surface = pygame.transform.smoothscale(assets.get_image(f"sprites/items/{key}"), self.tile_size)
+            for tile_pos in item:
+                pixel_pos = (self.tile_size[0] * tile_pos[0], self.tile_size[1] * tile_pos[1])
+                item_rect = item_surface.get_rect(topleft=pixel_pos)
+                self.interactable_objects_rects[key].append(item_rect)
+                map_surface.blit(item_surface, item_rect)
         return map_surface
+
+    def update(self, model):
+        self.camera.update(model.player.rect)
+
+    def _get_interactable_rect_list_updated(self):
+        rects = {}
+        for key, rect_list in self.interactable_objects_rects.items():
+            rects[key] = []
+            for rect in rect_list:
+                rects[key].append(self.camera.apply_offset(rect))
+        return rects
 
     def draw(self, screen, model, assets):
         self.image.fill(config.BLACK_COLOR)
-        self.camera.update(model.player.rect)
 
         self.image.blit(self.static_map_image, self.camera.apply_offset(self.static_map_image.get_rect()))
 
@@ -156,9 +179,6 @@ class ExecutionPanel(BasePanel):
         self.EXECUTION_ROWS_NUM = 2
         self.EXECUTION_COLS_NUM = 13
 
-        # self.slot_width = (self.width - (self.EXECUTION_COLS_NUM + 1) * 10) // self.EXECUTION_COLS_NUM
-        # self.slot_height = (self.height - 10 - (self.EXECUTION_ROWS_NUM + 1) * 10) // self.EXECUTION_ROWS_NUM
-
         self.slot_width = 40
         self.slot_height = 40
 
@@ -190,7 +210,7 @@ class ExecutionPanel(BasePanel):
     def _create_buttons(self, assets):
         self.buttons = {
             "execute": IconButton(assets.get_image("icons/play.png"), (self.width - 30, 30), (50, 50), config.LIGHT_GREEN_COLOR, config.GRAY_COLOR, 10),
-            "cancel": IconButton(assets.get_image("icons/trash.png"), (self.width - 30, 90), (50, 50), config.RED_COLOR, config.GRAY_COLOR, 10)
+            "clear": IconButton(assets.get_image("icons/trash.png"), (self.width - 30, 90), (50, 50), config.RED_COLOR, config.GRAY_COLOR, 10)
         }
 
     def _create_static_background(self):
@@ -203,13 +223,10 @@ class ExecutionPanel(BasePanel):
         return background
 
     def _sync_buttons_with_model(self, model_actions):
-        # while len(self.command_buttons) > len(model_actions):
-        #     self.command_buttons.pop()
         self.command_buttons.clear()
 
         for i, action in enumerate(model_actions):
             command_button_icon = self.assets.get_image(f"icons/{action.action_name.lower()}.png")
-            # change_button_icon = self.assets.get_image(f"icons/change.png")
             cancel_button_icon = self.assets.get_image(f"icons/cancel.png")
             command_pos = self.slot_rects[i].topleft
             cancel_pos = (command_pos[0] + 25, command_pos[1])
@@ -288,14 +305,13 @@ class ExecutionPanel(BasePanel):
         self.image.blit(self.static_background, (0, 0))
 
         for i, buttons in enumerate(self.command_buttons):
-            # if is_dragging and i == dragged_command_index:
-            #     continue
-
             for button in buttons:
+                if i == self.game_model.current_action_index:
+                    pygame.draw.rect(self.image, config.LIGHT_GREEN_COLOR, pygame.Rect(button.rect.x, button.rect.y, button.rect.width, button.rect.height))
                 button.draw(self.image)
 
-        self.buttons["execute"].draw(self.image)
-        self.buttons["cancel"].draw(self.image)
+        for button in self.buttons.values():
+            button.draw(self.image)
 
         screen.blit(self.image, self.rect)
 

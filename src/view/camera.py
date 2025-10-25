@@ -2,10 +2,10 @@ import pygame
 
 
 class Camera:
-    def __init__(self, size, map_size):
+    def __init__(self, size, map_size, pos):
         self.width, self.height = size
         self.map_width, self.map_height = map_size
-        self.rect = pygame.Rect(0, 0, self.width, self.height)
+        self.rect = pygame.Rect(pos[0], pos[1], self.width, self.height)
 
     def apply_offset(self, entity_rect):
         return entity_rect.move(self.rect.topleft)

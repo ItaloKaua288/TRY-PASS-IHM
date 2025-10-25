@@ -27,14 +27,20 @@ class GameController:
         start_tile_pos = self.model.player.target_pos
         pixel_pos = (start_tile_pos[0] * TILE_SIZE, start_tile_pos[1] * TILE_SIZE)
         self.model.player.rect.topleft = pixel_pos
-        self.model.player.transform_size((TILE_SIZE, TILE_SIZE))
 
     def run_game(self, mouse_pos):
         if self.model.game_state == GameState.EXECUTING and not self.model.player.is_moving:
-            if self.model.actions_sequence:
-                self.model.actions_sequence.pop(0).execute(self.model)
-            else:
-                self.model.game_state = GameState.CODING
+
+            for i, action in enumerate(self.model.actions_sequence):
+                if action.is_finished:
+                    continue
+                else:
+                    self.model.current_action_index = i
+                    action.execute(self.model)
+                    return
+
+            self.model.reset_sequence()
+            self.model.game_state = GameState.CODING
 
         self.model.update()
 
@@ -108,7 +114,10 @@ class GameController:
         execution_panel = self.view.panels["execution"]
 
         if execution_panel.buttons["execute"].is_hovered:
-            self.model.game_state = GameState.EXECUTING
+            self.model.start_execution()
+            return
+        if execution_panel.buttons["clear"].is_hovered:
+            self.model.clear_sequence()
             return
 
         clicked_info = execution_panel.get_clicked_command_info(mouse_pos)
@@ -120,7 +129,3 @@ class GameController:
                 self.is_dragging = True
                 self.dragged_command_index = index
                 execution_panel.start_drag(index, mouse_pos, game_model)
-            # elif action_type == "change_button":
-            #     self.is_dragging = True
-            #     self.dragged_command_index = index
-            #     execution_panel.start_drag(index, mouse_pos, game_model)

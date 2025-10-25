@@ -52,9 +52,11 @@ class AssetsManager:
                     level_data = json.load(file)
 
                     self.level_data[relative_path] = {
-                        "objective_text": level_data["objective"],
+                        "objective_text": level_data["objective_text"],
                         "tile_map": level_data["tile_map"],
-                        "player_start_pos": level_data["player_start_pos"]
+                        "player_start_pos": level_data["player_start_pos"],
+                        "final_objective_pos": level_data["final_objective_pos"],
+                        "interactable_objects": level_data["interactable_objects"]
                     }
             except (FileNotFoundError, KeyError) as e:
                 return None
