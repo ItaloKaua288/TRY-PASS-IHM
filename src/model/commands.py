@@ -15,7 +15,6 @@ class WalkCommand(Command):
 
         if game_model.is_valid_move((next_tile_pos_x, next_tile_pos_y)):
             game_model.player.set_next_move()
-            game_model.remove_action_from_sequence(0)
         self.is_finished = True
 
 
@@ -23,11 +22,12 @@ class TurnLeftCommand(Command):
     action_name = "TURN_LEFT"
     def execute(self, game_model):
         player = game_model.player
-        if not player.is_moving:
+        if player.is_rotating:
+            player.update()
+        elif not player.is_moving:
             player.direction_index = (player.direction_index - 1) % len(player.directions)
             player.is_rotating = True
-            player.target_angle = player.target_angles[player.direction_index]
-            game_model.remove_action_from_sequence(0)
+            player.direction_rotate = -1
             self.is_finished = True
 
 
@@ -35,9 +35,12 @@ class TurnRightCommand(Command):
     action_name = "TURN_RIGHT"
     def execute(self, game_model):
         player = game_model.player
-        if not player.is_moving:
+        if player.is_rotating:
+            player.update()
+        elif not player.is_moving:
             player.direction_index = (player.direction_index + 1) % len(player.directions)
-            game_model.remove_action_from_sequence(0)
+            player.is_rotating = True
+            player.direction_rotate = 1
             self.is_finished = True
 
 class RepeatCommand(Command):

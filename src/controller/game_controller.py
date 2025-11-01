@@ -4,6 +4,7 @@ from src.config import TILE_SIZE
 from src.model.commands import WalkCommand, TurnLeftCommand, TurnRightCommand, RepeatCommand, EndRepeatCommand
 from src.model.game_model import GameState
 from src.config import GameStateMap
+from src.model.items import Chest
 
 COMMAND_MAP = {
     "walk": WalkCommand,
@@ -14,9 +15,10 @@ COMMAND_MAP = {
 }
 
 class GameController:
-    def __init__(self, model, view):
+    def __init__(self, model, view, game_manager):
         self.model = model
         self.view = view
+        self.game_manager = game_manager
 
         self.is_dragging = False
         self.dragged_command_index = None
@@ -30,10 +32,14 @@ class GameController:
 
     def run_game(self, mouse_pos):
         if self.model.game_state == GameState.EXECUTING and not self.model.player.is_moving:
-
             for i, action in enumerate(self.model.actions_sequence):
                 if action.is_finished:
-                    continue
+                    map_panel = self.view.panels["map"]
+                    player_rect = map_panel.get_player_rect_updated(self.model.player.rect)
+                    for key, map_items_rect in map_panel.get_interactable_rect_list_updated().items():
+                        for j, map_item_rect in enumerate(map_items_rect):
+                            if player_rect.colliderect(map_item_rect):
+                                self._handle_map_item_interacted(key, j)
                 else:
                     self.model.current_action_index = i
                     action.execute(self.model)
@@ -45,6 +51,24 @@ class GameController:
         self.model.update()
 
         self.view.update(mouse_pos)
+
+    def _handle_map_item_interacted(self, key, item_list_pos):
+        if self.model.is_victory():
+            self.game_manager.current_game_state = GameStateMap.MAIN_MENU
+            return
+
+        map_item = self.model.interactable_objects[key][item_list_pos]
+        if map_item.is_interacted:
+            return
+        player_inventory = self.model.player.inventory
+
+        if isinstance(map_item, Chest):
+            for item in map_item.internal_items:
+                player_inventory.add_item(item)
+        map_item.is_interacted = True
+
+    def collect_map_item(self, key, map_item_rect):
+        pass
 
     def handle_events(self, events, game_model, game_state_manager):
         mouse_pos = pygame.mouse.get_pos()
@@ -65,12 +89,15 @@ class GameController:
     def _handle_mouse_down(self, mouse_pos, game_model, game_state_manager):
         for key, panel in self.view.panels.items():
             if panel.rect.collidepoint(mouse_pos):
-                if key == "tools":
-                    self._handle_tools_panel_click()
-                elif key == "execution":
-                    self._handle_execution_panel_click(mouse_pos, game_model)
-                elif key == "top_bar":
+                if key == "top_bar":
                     self._handle_top_bar_panel_click(game_state_manager)
+                elif self.view.panels["inventory"].is_visible:
+                    self._handle_inventory_panel(mouse_pos)
+                else:
+                    if key == "tools":
+                        self._handle_tools_panel_click()
+                    elif key == "execution":
+                        self._handle_execution_panel_click(mouse_pos, game_model)
                 return
 
     def _handle_mouse_up(self, mouse_pos, game_model):
@@ -91,7 +118,6 @@ class GameController:
 
     def _handle_top_bar_panel_click(self, game_state_manager):
         topbar_panel = self.view.panels["top_bar"]
-
         for key, button in topbar_panel.buttons.items():
             if button.is_hovered:
                 if key == "options":
@@ -129,3 +155,16 @@ class GameController:
                 self.is_dragging = True
                 self.dragged_command_index = index
                 execution_panel.start_drag(index, mouse_pos, game_model)
+
+    def _handle_inventory_panel(self, mouse_pos):
+        player_inventory = self.model.player.inventory
+        inventory_panel = self.view.panels["inventory"]
+
+        for i, item in enumerate(player_inventory.items):
+            if inventory_panel.get_slot_rect_hovered(mouse_pos) == i:
+                if self.model.player.item_hand == item:
+                    self.model.player.item_hand = None
+                else:
+                    self.model.player.item_hand = item
+            if item.is_used:
+                player_inventory.remove_item(item)

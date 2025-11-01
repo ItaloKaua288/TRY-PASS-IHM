@@ -1,7 +1,7 @@
 import pygame
 from src.view.ui_elements import TextButton
-from src.view.ui_panels import OptionsPanel
-from src.config import TRANSPARENT_COLOR, WHITE_COLOR, GRAY_COLOR, BLACK_COLOR
+from src.view.main_menu_panels import OptionsPanel
+from src.config import Colors
 
 class MainMenuView:
     def __init__(self, screen, assets):
@@ -22,9 +22,9 @@ class MainMenuView:
         center_y = self.height // 2
 
         self.buttons = {
-            "new_game": TextButton("Novo Jogo", menu_font, (center_x, center_y), TRANSPARENT_COLOR, TRANSPARENT_COLOR, text_color=WHITE_COLOR, text_color_hover=GRAY_COLOR),
-            "options": TextButton("Opções", menu_font, (center_x, center_y + 35), TRANSPARENT_COLOR, TRANSPARENT_COLOR, text_color=WHITE_COLOR, text_color_hover=GRAY_COLOR),
-            "quit": TextButton("Sair", menu_font, (center_x, center_y + 75), TRANSPARENT_COLOR, TRANSPARENT_COLOR, text_color=WHITE_COLOR, text_color_hover=GRAY_COLOR)
+            "new_game": TextButton("Novo Jogo", menu_font, (center_x, center_y), Colors.TRANSPARENT_COLOR, Colors.TRANSPARENT_COLOR, text_color=Colors.WHITE_COLOR, text_color_hover=Colors.GRAY_COLOR),
+            "options": TextButton("Opções", menu_font, (center_x, center_y + 35), Colors.TRANSPARENT_COLOR, Colors.TRANSPARENT_COLOR, text_color=Colors.WHITE_COLOR, text_color_hover=Colors.GRAY_COLOR),
+            "quit": TextButton("Sair", menu_font, (center_x, center_y + 75), Colors.TRANSPARENT_COLOR, Colors.TRANSPARENT_COLOR, text_color=Colors.WHITE_COLOR, text_color_hover=Colors.GRAY_COLOR)
         }
 
     def _create_panels(self, assets):
@@ -37,7 +37,7 @@ class MainMenuView:
         self.sprite_character.set_alpha(40)
 
         title_font = assets.get_font("Monospace", 80)
-        self.title_surf = title_font.render("TRY:PASS", True, WHITE_COLOR)
+        self.title_surf = title_font.render("TRY:PASS", True, Colors.WHITE_COLOR)
 
     def update(self, mouse_pos):
         for button in self.buttons.values():
@@ -47,7 +47,7 @@ class MainMenuView:
             panel.update(mouse_pos)
 
     def draw(self):
-        self.image.fill(BLACK_COLOR)
+        self.image.fill(Colors.BLACK_COLOR)
 
         center_x = self.width // 2
         center_y = self.height // 2

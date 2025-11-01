@@ -1,7 +1,7 @@
 import pygame
-from .ui_panels import MapPanel, TopBarPanel, InventoryPanel, ExecutionPanel, ToolsPanel
+from .main_menu_panels import MapPanel, TopBarPanel, InventoryPanel, ExecutionPanel, ToolsPanel, InfoPanel
 
-from src import config
+from src.config import Colors
 
 
 class GameView:
@@ -23,8 +23,9 @@ class GameView:
         self.panels = {
             "map": MapPanel((self.width - 185, self.height - 190), (5, 60), self.model, self.assets),
             "execution": ExecutionPanel((600, 120), (5, self.height - 125), title_font, self.assets, self.model),
-            "inventory": InventoryPanel((400, 366), ((self.width // 2) - 200, (self.height // 2) - 183), title_font),
-            "tools": ToolsPanel((170, 366), (self.width - 175, 5), title_font, self.assets),
+            "tools": ToolsPanel((170, 366), (self.width - 175, 5), title_font, self.model, self.assets),
+            "info": InfoPanel((235, 120), (610, self.height - 125), title_font, self.model, self.assets),
+            "inventory": InventoryPanel((400, 366), ((self.width // 2) - 200, (self.height // 2) - 183), title_font, self.assets),
             "top_bar": TopBarPanel((self.width - 185, 50), (5, 5), title_font, self.model.objective_text, self.assets)
         }
 
@@ -33,10 +34,11 @@ class GameView:
         self.panels["top_bar"].update(mouse_pos)
         self.panels["tools"].update(mouse_pos)
         self.panels["execution"].update(mouse_pos)
-        self.panels["map"].update(self.model)
+        self.panels["map"].update()
+        self.panels["info"].update()
 
     def draw(self, *args, **kwargs):
-        self.image.fill(config.BLACK_COLOR_2)
+        self.image.fill(Colors.BLACK_COLOR_2)
 
         for panel in self.panels.values():
             panel.draw(self.image, self.model, self.assets)

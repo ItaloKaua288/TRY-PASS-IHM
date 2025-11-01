@@ -12,7 +12,7 @@ class MainMenuController:
                     if button.is_hovered:
                         match key:
                             case "new_game":
-                                game_state_manager.current_game_state = GameStateMap.IN_GAME
+                                game_state_manager.current_game_state = GameStateMap.LEVEL_SELECT
                             case "options":
                                 self._toggle_visibility_options()
                             case "quit":
