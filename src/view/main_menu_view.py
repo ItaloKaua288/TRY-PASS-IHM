@@ -1,6 +1,6 @@
 import pygame
 from src.view.ui_elements import TextButton
-from src.view.main_menu_panels import OptionsPanel
+from src.view.game_menu_panels import OptionsPanel
 from src.config import Colors
 
 class MainMenuView:

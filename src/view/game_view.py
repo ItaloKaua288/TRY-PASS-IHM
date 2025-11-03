@@ -1,14 +1,14 @@
 import pygame
-from .main_menu_panels import MapPanel, TopBarPanel, InventoryPanel, ExecutionPanel, ToolsPanel, InfoPanel
+from .game_menu_panels import MapPanel, TopBarPanel, InventoryPanel, ExecutionPanel, ToolsPanel, InfoPanel
 
 from src.config import Colors
 
 
 class GameView:
-    def __init__(self, screen, assets, model):
+    def __init__(self, screen, assets, game_manager):
         self.screen = screen
         self.assets = assets
-        self.model = model
+        self.game_manager = game_manager
         self.width, self.height = screen.get_size()
         self.dragged_info = {}
 
@@ -21,12 +21,12 @@ class GameView:
         title_font = self.assets.get_font("Monospace", 15)
 
         self.panels = {
-            "map": MapPanel((self.width - 185, self.height - 190), (5, 60), self.model, self.assets),
-            "execution": ExecutionPanel((600, 120), (5, self.height - 125), title_font, self.assets, self.model),
-            "tools": ToolsPanel((170, 366), (self.width - 175, 5), title_font, self.model, self.assets),
-            "info": InfoPanel((235, 120), (610, self.height - 125), title_font, self.model, self.assets),
-            "inventory": InventoryPanel((400, 366), ((self.width // 2) - 200, (self.height // 2) - 183), title_font, self.assets),
-            "top_bar": TopBarPanel((self.width - 185, 50), (5, 5), title_font, self.model.objective_text, self.assets)
+            "map": MapPanel((self.width - 185, self.height - 190), (5, 60), self.assets, self.game_manager),
+            "execution": ExecutionPanel((600, 120), (5, self.height - 125), title_font, self.assets, self.game_manager),
+            "tools": ToolsPanel((170, 366), (self.width - 175, 5), title_font, self.assets, self.game_manager),
+            "info": InfoPanel((235, 120), (610, self.height - 125), title_font, self.assets, self.game_manager),
+            "inventory": InventoryPanel((400, 366), ((self.width // 2) - 200, (self.height // 2) - 183), title_font, self.assets, self.game_manager),
+            "top_bar": TopBarPanel((self.width - 185, 50), (5, 5), title_font, self.assets, self.game_manager)
         }
 
     def update(self, mouse_pos):
@@ -37,11 +37,16 @@ class GameView:
         self.panels["map"].update()
         self.panels["info"].update()
 
+    def update_full_panels(self):
+        self.panels["map"].update_new_map()
+        self.panels["top_bar"].update_elements()
+        self.panels["tools"].update_elements()
+
     def draw(self, *args, **kwargs):
         self.image.fill(Colors.BLACK_COLOR_2)
 
         for panel in self.panels.values():
-            panel.draw(self.image, self.model, self.assets)
+            panel.draw(self.image, self.game_manager.game_model, self.assets)
 
         self.screen.blit(self.image, (0, 0))
         pygame.display.flip()

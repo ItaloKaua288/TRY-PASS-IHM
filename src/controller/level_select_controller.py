@@ -6,9 +6,8 @@ from src.model import game_model
 
 
 class LevelSelectController:
-    def __init__(self, view, game_model, assets, game_manager):
+    def __init__(self, view, assets, game_manager):
         self.view = view
-        self.game_model = game_model
         self.game_manager = game_manager
         self.assets = assets
 
@@ -26,13 +25,13 @@ class LevelSelectController:
                     self.game_manager.current_game_state = GameStateMap.MAIN_MENU
                 elif key == "select":
                     self.game_manager.game_model = game_model.GameModel()
-                    # self.game_view = game_view.GameView(self.view, self.assets, self.game_model)
                     self.game_manager.game_model.load_level(f"src/level_data/level_data_{self.view.level_selected}.json", self.assets)
-                    self.game_manager.game_view.model = self.game_manager.game_model
-                    self.game_manager.game_controller.model = self.game_manager.game_model
-                    self.game_manager.game_view.panels["map"].game_model = self.game_manager.game_model
-                    self.game_manager.game_view.panels["map"].update_new_map()
-                    self.game_manager.game_view.panels["execution"].game_model = self.game_manager.game_model
+                    # self.game_manager.game_view.model = self.game_manager.game_model
+                    # self.game_manager.game_controller.model = self.game_manager.game_model
+                    # self.game_manager.game_view.panels["map"].game_model = self.game_manager.game_model
+                    self.game_manager.game_view.update_full_panels()
+                    # self.game_manager.game_view.panels["map"].update_new_map()
+                    # self.game_manager.game_view.panels["execution"].game_model = self.game_manager.game_model
                     self.game_manager.current_game_state = GameStateMap.IN_GAME
                 return
 

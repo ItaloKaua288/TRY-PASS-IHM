@@ -28,10 +28,10 @@ class BasePanel:
 
 
 class MapPanel:
-    def __init__(self, size, pos, model, assets):
+    def __init__(self, size, pos, assets, game_manager):
         self.width, self.height = size
-        self.game_model = model
         self.assets = assets
+        self.game_manager = game_manager
         self.tile_size = (TILE_SIZE, TILE_SIZE)
         self.image = pygame.Surface(size, pygame.SRCALPHA)
         self.rect = self.image.get_rect(topleft=pos)
@@ -45,9 +45,10 @@ class MapPanel:
         self.camera = camera.Camera((self.width, self.height), self.static_map_image.get_size(), self.rect.topleft)
 
     def pre_render_map(self):
+        game_model = self.game_manager.game_model
         tile_set = self.assets.get_tileset("sprites/tiles_map", self.tile_size)
-        tile_map_data = self.game_model.tile_map
-        interactable_objects = self.game_model.interactable_objects
+        tile_map_data = game_model.tile_map
+        interactable_objects = game_model.interactable_objects
 
         map_width = len(tile_map_data[0]) * self.tile_size[0]
         map_height = len(tile_map_data) * self.tile_size[1]
@@ -65,14 +66,14 @@ class MapPanel:
         return map_surface
 
     def update(self):
-        self.camera.update(self.game_model.player.rect)
+        self.camera.update(self.game_manager.game_model.player.rect)
 
     def get_player_rect_updated(self, player_rect):
         return self.camera.apply_offset(player_rect)
 
     def get_interactable_rect_list_updated(self):
         rects = {}
-        for key, items in self.game_model.interactable_objects.items():
+        for key, items in self.game_manager.game_model.interactable_objects.items():
             rects[key] = []
             for item in items:
                 rects[key].append(self.camera.apply_offset(item.rect))
@@ -82,17 +83,17 @@ class MapPanel:
         self.image.fill(Colors.BLACK_COLOR)
         self.image.blit(self.static_map_image, self.camera.apply_offset(self.static_map_image.get_rect()))
 
-        pygame.draw.rect(self.image, Colors.RED_COLOR, self.camera.apply_offset(model.player.rect))
         self.image.blit(model.player.image, self.camera.apply_offset(model.player.rect))
 
         screen.blit(self.image, self.rect)
 
 
 class TopBarPanel(BasePanel):
-    def __init__(self, size, pos, font, objective_text, assets):
+    def __init__(self, size, pos, font, assets, game_manager):
         super().__init__(size, pos, bg_color=Colors.TRANSPARENT_COLOR)
         self.font = font
-        self.objective_text = objective_text
+        self.objective_text = game_manager.game_model.objective_text
+        self.game_manager = game_manager
 
         self._create_buttons(assets)
         self._draw_static_elements()
@@ -122,6 +123,10 @@ class TopBarPanel(BasePanel):
         for button in self.buttons.values():
             button.update(local_pos)
 
+    def update_elements(self):
+        self.objective_text = self.game_manager.game_model.objective_text
+        self._draw_static_elements()
+
     def draw(self, screen: pygame.Surface, model, assets=None):
         if self.is_visible:
             for button in self.buttons.values():
@@ -130,8 +135,9 @@ class TopBarPanel(BasePanel):
 
 
 class InventoryPanel(BasePanel):
-    def __init__(self, size, pos, font, assets):
+    def __init__(self, size, pos, font, assets, game_manager):
         super().__init__(size, pos, "INVENTÁRIO", font, is_visible=False)
+        self.game_manager = game_manager
         self.inventory_items = []
         self.overlay = pygame.Surface(pygame.display.get_surface().get_size(), pygame.SRCALPHA)
         self.overlay.fill((0, 0, 0, 240))
@@ -166,29 +172,35 @@ class InventoryPanel(BasePanel):
     def update(self, assets):
         self.__create_slot_rects(assets)
 
-    def draw(self, screen, model, assets=None):
+    def draw(self, screen, model=None, assets=None):
         if self.is_visible:
-            player_inventory_items = model.player.inventory.items
+            image_surf = self.image.copy()
+            screen.blit(self.overlay, (0, 0))
+            player_inventory_items = self.game_manager.game_model.player.inventory.items
             for i, item in enumerate(player_inventory_items):
                 pos_row = i // self.max_slot_row
                 pos_col = i % self.max_slot_col
-                self.image.blit(pygame.transform.smoothscale(item.image, (self.slot_width, self.slot_height)), self.slot_rects[pos_row][pos_col])
-            screen.blit(self.overlay, (0, 0))
-        super().draw(screen, model, assets)
+                image_surf.blit(pygame.transform.smoothscale(item.image, (self.slot_width, self.slot_height)), self.slot_rects[pos_row][pos_col])
+            screen.blit(image_surf, self.rect)
+
 
 class ToolsPanel(BasePanel):
-    def __init__(self, size, pos, font, model, assets):
+    def __init__(self, size, pos, font, assets, game_manager):
         super().__init__(size, pos, "FERRAMENTAS", font)
+        self.game_manager = game_manager
+        self.assets = assets
 
-        self._create_buttons(model, assets)
+        self.base_image = self.image.copy()
+
+        self._create_buttons()
         self._draw_buttons_on_panel()
 
-    def _create_buttons(self, model, assets):
+    def _create_buttons(self):
         row_buttons_count = (self.width - 5) // 55
         self.buttons = {}
-        for i, type_button in enumerate(model.available_actions):
+        for i, type_button in enumerate(self.game_manager.game_model.available_actions):
             center_pos = (30 + 55 * (i % row_buttons_count), 55 + 55 * (i // row_buttons_count))
-            self.buttons[type_button] = IconButton(assets.get_image(f"icons/{type_button.lower()}.png"), center_pos, (50, 50), Colors.GRAY_COLOR, Colors.DARK_GRAY_COLOR, border_radius=10)
+            self.buttons[type_button] = IconButton(self.assets.get_image(f"icons/{type_button.lower()}.png"), center_pos, (50, 50), Colors.GRAY_COLOR, Colors.DARK_GRAY_COLOR, border_radius=10)
 
     def _draw_buttons_on_panel(self):
         for button in self.buttons.values():
@@ -199,18 +211,23 @@ class ToolsPanel(BasePanel):
         for button in self.buttons.values():
             button.update(local_pos)
 
-    def draw(self, screen: pygame.Surface, model, assets=None):
-        super().draw(screen, model)
+    def update_elements(self):
+        self.image = self.base_image.copy()
+        self._create_buttons()
+
+    def draw(self, screen: pygame.Surface, model=None, assets=None):
+        super().draw(screen, self.game_manager.game_model)
         if self.is_visible:
             for button in self.buttons.values():
                 button.draw(self.image)
             screen.blit(self.image, self.rect)
 
+
 class ExecutionPanel(BasePanel):
-    def __init__(self, size, pos, font, assets, game_model):
+    def __init__(self, size, pos, font, assets, game_manager):
         super().__init__(size, pos, "SEQUÊNCIA DE EXECUÇÃO", font)
         self.assets = assets
-        self.game_model = game_model
+        self.game_manager = game_manager
         self.EXECUTION_ROWS_NUM = 2
         self.EXECUTION_COLS_NUM = 13
 
@@ -257,8 +274,9 @@ class ExecutionPanel(BasePanel):
             background.blit(scaled_frame, slot_rect)
         return background
 
-    def _sync_buttons_with_model(self, model_actions):
+    def _sync_buttons_with_model(self):
         self.command_buttons.clear()
+        model_actions = self.game_manager.game_model.actions_sequence
 
         for i, action in enumerate(model_actions):
             command_button_icon = self.assets.get_image(f"icons/{action.action_name.lower()}.png")
@@ -293,8 +311,8 @@ class ExecutionPanel(BasePanel):
                 return button_info
         return None
 
-    def start_drag(self, index, pos, game_model):
-        if not (0 <= index < len(game_model.actions_sequence)):
+    def start_drag(self, index, pos):
+        if not (0 <= index < len(self.game_manager.game_model.actions_sequence)):
             return
         self.dragged_info["index"] = index
         self.dragged_info["pos"] = pos
@@ -305,11 +323,11 @@ class ExecutionPanel(BasePanel):
             for button in self.command_buttons[self.dragged_info["index"]]:
                 button.rect.topleft = local_pos
 
-    def stop_drag(self, mouse_pos, game_model):
+    def stop_drag(self, mouse_pos):
         slot_index = self.get_slot_index(mouse_pos)
 
         if slot_index is not None:
-            self._sync_buttons_with_model(game_model.actions_sequence)
+            self._sync_buttons_with_model()
 
         self.dragged_info["index"] = None
 
@@ -325,9 +343,9 @@ class ExecutionPanel(BasePanel):
         for button in self.buttons.values():
             button.update(local_pos)
 
-        model_signature = "".join([a.action_name for a in self.game_model.actions_sequence])
+        model_signature = "".join([a.action_name for a in self.game_manager.game_model.actions_sequence])
         if model_signature != self._current_command_signature:
-            self._sync_buttons_with_model(self.game_model.actions_sequence)
+            self._sync_buttons_with_model()
 
         for buttons in self.command_buttons:
             for button in buttons:
@@ -339,7 +357,7 @@ class ExecutionPanel(BasePanel):
         self.image.blit(self.static_background, (0, 0))
         for i, buttons in enumerate(self.command_buttons):
             for button in buttons:
-                if i == self.game_model.current_action_index:
+                if i == self.game_manager.game_model.current_action_index:
                     pygame.draw.rect(self.image, Colors.LIGHT_GREEN_COLOR, pygame.Rect(button.rect.x, button.rect.y, button.rect.width, button.rect.height))
                 button.draw(self.image)
 
@@ -356,6 +374,7 @@ class ExecutionPanel(BasePanel):
                 col_index = i // 12
                 return (row_index, col_index), i
         return None, None
+
 
 class OptionsPanel(BasePanel):
     def __init__(self, size, pos, font, assets):
@@ -385,10 +404,11 @@ class OptionsPanel(BasePanel):
 
             screen.blit(self.image, self.rect)
 
+
 class InfoPanel(BasePanel):
-    def __init__(self, size, pos, font, game_model, assets):
+    def __init__(self, size, pos, font, assets, game_manager):
         super().__init__(size, pos, "", font, is_visible=True)
-        self.game_model = game_model
+        self.game_manager = game_manager
 
         self.text_font = pygame.font.SysFont("monospace", 15)
 
@@ -402,11 +422,11 @@ class InfoPanel(BasePanel):
         self.item_hand_slot_surf = pygame.transform.smoothscale(assets.get_image("black_frame.png"), (32, 32))
 
     def update(self):
-        self.item_map_count_text = self.text_font.render(f"Coletaveis: {self.game_model.get_count_collectibles_available()}", True, True)
+        self.item_map_count_text = self.text_font.render(f"Coletaveis: {self.game_manager.game_model.get_count_collectibles_available()}", True, True)
 
-    def draw(self, screen, model, assets=None):
+    def draw(self, screen, model=None, assets=None):
         if self.is_visible:
-            player_item_hand = model.player.item_hand
+            player_item_hand = self.game_manager.game_model.player.item_hand
 
             pygame.draw.rect(self.image, Colors.WHITE_COLOR, self.item_hand_slot_surf.get_rect(topleft=(150, 5)))
             self.image.blit(self.item_hand_slot_surf, (150, 5))

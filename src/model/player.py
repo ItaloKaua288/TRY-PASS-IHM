@@ -15,7 +15,7 @@ class Player(pygame.sprite.Sprite):
         self.is_moving = False
         self.is_rotating = False
         self.current_sprite = 0
-        self.animation_speed = 0.025
+        self.animation_speed = 0.01
         self.velocity = 2
 
         self.target_pos = pos
@@ -99,7 +99,7 @@ class Player(pygame.sprite.Sprite):
         if self.direction_rotate > 0:
             sprites = sprites["clockwise"]
         elif self.direction_rotate < 0:
-            sprites = self.__sprites["rotate"]["counterclockwise"]
+            sprites = sprites["counterclockwise"]
         self.image = sprites[self.directions[self.direction_index][2]][int(self.rotation_count)]
         self.rotation_count += self.rotation_speed
 
