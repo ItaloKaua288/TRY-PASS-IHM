@@ -436,3 +436,92 @@ class InfoPanel(BasePanel):
             pygame.draw.rect(self.image, Colors.WHITE_COLOR, self.item_map_count_text.get_rect(topleft=(10, 40)))
             self.image.blit(self.item_map_count_text, (10, 40))
             screen.blit(self.image, self.rect)
+
+
+class RepeatConfigPanel(BasePanel):
+    """
+    Um painel pop-up para configurar o número de repetições de um RepeatCommand.
+    """
+
+    def __init__(self, size, pos, font, assets):
+        # Centraliza o painel na tela
+        centered_pos = (pos[0] - size[0] // 2, pos[1] - size[1] // 2)
+        super().__init__(size, centered_pos, "CONFIGURAR REPETIÇÃO", font, is_visible=True)
+
+        self.assets = assets
+        self.font = font
+
+        # Armazena o índice do comando que está sendo editado
+        self.target_command_index = None
+        self.current_count = 1
+
+        # Superfície de overlay para escurecer o fundo
+        self.overlay = pygame.Surface(pygame.display.get_surface().get_size(), pygame.SRCALPHA)
+        self.overlay.fill((0, 0, 0, 200))  # Fundo escuro semitransparente
+
+        self._create_elements()
+
+    def _create_elements(self):
+        """Cria os botões internos do painel."""
+        self.buttons = {
+            "minus": IconButton(self.assets.get_image("icons/back.png"), (self.width // 2 - 60, self.height // 2),
+                                (40, 40), Colors.GRAY_COLOR, Colors.DARK_GRAY_COLOR, 10),
+            "plus": IconButton(self.assets.get_image("icons/forward.png"), (self.width // 2 + 60, self.height // 2),
+                               (40, 40), Colors.GRAY_COLOR, Colors.DARK_GRAY_COLOR, 10),
+            "ok": IconButton(self.assets.get_image("icons/back.png"), (self.width // 2, self.height - 40), (40, 40),
+                             Colors.LIGHT_GREEN_COLOR, Colors.DARK_GRAY_COLOR, 10),
+        }
+
+    def open_for_command(self, command_index: int, current_repeat_count: int):
+        """Abre o painel para um comando específico."""
+        self.target_command_index = command_index
+        # Garante que o contador comece em pelo menos 1
+        self.current_count = max(1, current_repeat_count)
+        self.is_visible = True
+
+    def close_panel(self):
+        """Fecha o painel e reseta seu estado."""
+        self.is_visible = False
+        self.target_command_index = None
+        self.current_count = 1
+
+    def get_clicked_button(self, mouse_pos) -> str | None:
+        """Verifica qual botão interno foi clicado."""
+        local_pos = (mouse_pos[0] - self.rect.x, mouse_pos[1] - self.rect.y)
+        for name, button in self.buttons.items():
+            if button.rect.collidepoint(local_pos):
+                return name
+        return None
+
+    def update(self, mouse_pos):
+        """Atualiza o estado de hover dos botões internos."""
+        if not self.is_visible:
+            return
+
+        local_pos = (mouse_pos[0] - self.rect.x, mouse_pos[1] - self.rect.y)
+        for button in self.buttons.values():
+            button.update(local_pos)
+
+    def draw(self, screen, model, assets=None):
+        """Desenha o painel, o overlay e o contador numérico."""
+        if not self.is_visible:
+            return
+
+        # 1. Desenha o overlay escuro
+        screen.blit(self.overlay, (0, 0))
+
+        # 2. Desenha o painel base (chama o draw da BasePanel)
+        super().draw(screen, model, assets)
+
+        # 3. Desenha os botões
+        for button in self.buttons.values():
+            button.draw(self.image)
+
+        # 4. Desenha o texto do contador
+        count_font = self.assets.get_font("Monospace", 30)  # Fonte maior para o número
+        count_surf = count_font.render(str(self.current_count), True, Colors.BLACK_COLOR)
+        count_rect = count_surf.get_rect(center=(self.width // 2, self.height // 2))
+        self.image.blit(count_surf, count_rect)
+
+        # 5. Blita a imagem final do painel (que agora contém os botões e texto)
+        screen.blit(self.image, self.rect)

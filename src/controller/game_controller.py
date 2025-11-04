@@ -153,18 +153,65 @@ class GameController:
                 execution_panel.start_drag(clicked_info["index"], mouse_pos)
 
     def _handle_simple_click(self, mouse_pos):
+        if self.view.panels["repeat_config"].is_visible:
+            self._handle_repeat_config_click(mouse_pos)
+            return
+        elif self.view.panels["inventory"].is_visible:
+            self._handle_inventory_panel(mouse_pos)
+            # Verifica se o clique foi no painel de inventário
+            if self.view.panels["inventory"].rect.collidepoint(mouse_pos):
+                return  # Clique foi dentro do inventário, não faça mais nada
+            # Se não, continua para checar outros botões (como o de fechar)
+
+            # Lógica de clique normal
         for key, panel in self.view.panels.items():
             if panel.rect.collidepoint(mouse_pos):
                 if key == "top_bar":
                     self._handle_top_bar_panel_click()
-                elif self.view.panels["inventory"].is_visible:
-                    self._handle_inventory_panel(mouse_pos)
-                else:
-                    if key == "tools":
-                        self._handle_tools_panel_click()
-                    elif key == "execution":
-                        self._handle_execution_panel_click(mouse_pos)
+                elif key == "tools":
+                    self._handle_tools_panel_click()
+                elif key == "execution":
+                    self._handle_execution_panel_click(mouse_pos)
                 return
+        # for key, panel in self.view.panels.items():
+        #     if panel.rect.collidepoint(mouse_pos):
+        #         if key == "top_bar":
+        #             self._handle_top_bar_panel_click()
+        #         elif self.view.panels["inventory"].is_visible:
+        #             self._handle_inventory_panel(mouse_pos)
+        #         else:
+        #             if key == "tools":
+        #                 self._handle_tools_panel_click()
+        #             elif key == "execution":
+        #                 self._handle_execution_panel_click(mouse_pos)
+        #         return
+
+    def _handle_repeat_config_click(self, mouse_pos):
+        """Lida com cliques dentro do painel de configuração de repetição."""
+        panel = self.view.panels["repeat_config"]
+        clicked_button = panel.get_clicked_button(mouse_pos)
+        print(clicked_button)
+
+        if clicked_button == "plus":
+            panel.current_count += 1
+        elif clicked_button == "minus":
+            panel.current_count = max(1, panel.current_count - 1)  # Não permite 0 ou negativo
+        elif clicked_button == "ok":
+            # Ação principal: Atualiza o Model
+            command_index = panel.target_command_index
+            new_count = panel.current_count
+
+            if command_index is not None:
+                command = self.game_manager.game_model.actions_sequence[command_index]
+                # print(command)
+                if isinstance(command, RepeatCommand):
+                    command.repeat_count = new_count
+
+            panel.close_panel()
+        elif not panel.rect.collidepoint(mouse_pos):
+            # Clicar fora do painel também o fecha (como um "cancelar")
+            panel.close_panel()
+            pass
 
     def _handle_drag_drop(self, mouse_pos):
         if self.is_dragging:
@@ -218,6 +265,8 @@ class GameController:
             index, action_type = clicked_info["index"], clicked_info["action"]
             if action_type == "cancel_button":
                 game_model.remove_action_from_sequence(index)
+            elif action_type == "REPEAT":
+                self.view.panels["repeat_config"].open_for_command(index, 1)
 
     def _handle_inventory_panel(self, mouse_pos):
         game_model = self.game_manager.game_model

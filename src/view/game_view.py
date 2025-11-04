@@ -1,5 +1,5 @@
 import pygame
-from .game_menu_panels import MapPanel, TopBarPanel, InventoryPanel, ExecutionPanel, ToolsPanel, InfoPanel
+from .game_menu_panels import MapPanel, TopBarPanel, InventoryPanel, ExecutionPanel, ToolsPanel, InfoPanel, RepeatConfigPanel
 
 from src.config import Colors
 
@@ -26,16 +26,29 @@ class GameView:
             "tools": ToolsPanel((170, 366), (self.width - 175, 5), title_font, self.assets, self.game_manager),
             "info": InfoPanel((235, 120), (610, self.height - 125), title_font, self.assets, self.game_manager),
             "inventory": InventoryPanel((400, 366), ((self.width // 2) - 200, (self.height // 2) - 183), title_font, self.assets, self.game_manager),
-            "top_bar": TopBarPanel((self.width - 185, 50), (5, 5), title_font, self.assets, self.game_manager)
+            "top_bar": TopBarPanel((self.width - 185, 50), (5, 5), title_font, self.assets, self.game_manager),
+            "repeat_config": RepeatConfigPanel((300, 200), (self.width // 2, self.height // 2), title_font, self.assets)
         }
 
     def update(self, mouse_pos):
         self.width, self.height = self.screen.get_size()
-        self.panels["top_bar"].update(mouse_pos)
-        self.panels["tools"].update(mouse_pos)
-        self.panels["execution"].update(mouse_pos)
-        self.panels["map"].update()
-        self.panels["info"].update()
+
+        # ANOTAÇÃO: Se o painel estiver visível, ele deve ser o único a receber updates
+        if self.panels["repeat_config"].is_visible:
+            self.panels["repeat_config"].update(mouse_pos)
+        else:
+            # Atualizações normais
+            self.panels["top_bar"].update(mouse_pos)
+            self.panels["tools"].update(mouse_pos)
+            self.panels["execution"].update(mouse_pos)
+            self.panels["map"].update()
+            self.panels["info"].update()
+        # self.width, self.height = self.screen.get_size()
+        # self.panels["top_bar"].update(mouse_pos)
+        # self.panels["tools"].update(mouse_pos)
+        # self.panels["execution"].update(mouse_pos)
+        # self.panels["map"].update()
+        # self.panels["info"].update()
 
     def update_full_panels(self):
         self.panels["map"].update_new_map()
