@@ -1,6 +1,8 @@
 from . import player
 from src.model.items import Chest, Door, Item
-from src.config import TILE_SIZE
+from src.config import TILE_SIZE, BASE_PATH
+from os import path
+import json
 
 
 class GameState:
@@ -18,10 +20,13 @@ class GameModel:
         self.interactable_objects = {}
         self.available_actions = []
 
+        self.last_level_played = 0
+
         self.running = True
 
         self.actions_sequence = []
         self.current_action_index = -1
+        self.last_action_index = -1
 
         self.game_state = GameState.CODING
 
@@ -35,7 +40,6 @@ class GameModel:
 
         player_pos_pixel = level_data["player_start_pos"][0] * TILE_SIZE, level_data["player_start_pos"][1] * TILE_SIZE
         self.player = player.Player(player_pos_pixel, assets)
-        # self.interactable_objects = level_data["interactable_objects"]
         self.available_actions = level_data["available_actions"]
         self.final_objective_pos = level_data["final_objective_pos"][0] * TILE_SIZE, level_data["final_objective_pos"][1] * TILE_SIZE
 
@@ -53,6 +57,11 @@ class GameModel:
                     door = Door(item_pos, assets)
                     item_class_list.append(door)
             self.interactable_objects[key] = item_class_list
+
+        with open(path.join(BASE_PATH, "src", "level_data", "game_save.json"), 'r', encoding='utf-8') as file:
+            game_save = json.load(file)
+            self.last_level_played = game_save["last_level_played"]
+            file.close()
         return True
 
     def get_count_collectibles_available(self):
@@ -88,6 +97,7 @@ class GameModel:
         for action in self.actions_sequence:
             action.is_finished = False
             self.current_action_index = -1
+        self.last_action_index = -1
 
     def clear_sequence(self):
         self.actions_sequence.clear()
@@ -109,3 +119,23 @@ class GameModel:
 
     def is_victory(self):
         return self.final_objective_pos == self.player.target_pos
+
+    def unlock_next_level(self):
+        file_src = path.join(BASE_PATH, "src", "level_data", "game_save.json")
+        game_save = {}
+        with open(file_src, 'r', encoding='utf-8') as file:
+            game_save = json.load(file)
+            game_save["current_level_unlocked"] += 1
+            file.close()
+
+        with open(file_src, 'w', encoding='utf-8') as file:
+            file.write(json.dumps(game_save))
+            file.close()
+
+    def get_current_level_unlocked(self):
+        file_src = path.join(BASE_PATH, "src", "level_data", "game_save.json")
+        with open(file_src, 'r', encoding='utf-8') as file:
+            game_save = json.load(file)
+            current_level_unlocked = game_save["current_level_unlocked"]
+            file.close()
+            return current_level_unlocked

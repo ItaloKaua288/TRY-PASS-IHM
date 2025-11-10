@@ -46,6 +46,12 @@ class LevelSelectView:
         self.image.fill(Colors.BLACK_COLOR)
         self.image.blit(self.level_map_surf, self.level_map_surf.get_rect(centerx=self.rect.centerx, centery=self.rect.centery))
         self.image.blit(self.select_indicator_surf, self.select_indicator_surf.get_rect(center=self.level_slot_rects[self.level_selected].center))
+
+        padlock_icon_surf = pygame.transform.smoothscale(self.assets.get_image("icons/padlock.png"), (50, 50))
+        for i, level_slot_rect in enumerate(self.level_slot_rects):
+            if i > self.game_manager.game_model.get_current_level_unlocked():
+                self.image.blit(padlock_icon_surf, padlock_icon_surf.get_rect(center=level_slot_rect.center))
+
         for button in self.buttons.values():
             button.draw(self.image)
         self.screen.blit(self.image, self.rect)

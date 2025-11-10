@@ -1,7 +1,10 @@
+from pathlib import Path
+
 SCREEN_WIDTH = 1024
 SCREEN_HEIGHT = int(SCREEN_WIDTH * 0.563)
 FPS = 60
 TILE_SIZE = 32
+BASE_PATH = Path(__file__).parent.parent
 
 class Colors:
     BLACK_COLOR = (0, 0, 0)

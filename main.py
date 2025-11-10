@@ -1,10 +1,10 @@
 import pygame
 
 from src import assets_manager
-from view import game_view, main_menu_view, level_select_view
-from model import  game_model
-from controller import game_controller, main_menu_controller, level_select_controller
-import config
+from src.view import game_view, main_menu_view, level_select_view
+from src.model import  game_model
+from src.controller import game_controller, main_menu_controller, level_select_controller
+from src import config
 
 class Game:
     def __init__(self):
@@ -45,7 +45,7 @@ class Game:
                 self.level_select_view.update(mouse_pos)
                 self.level_select_view.draw()
             elif self.current_game_state == config.GameStateMap.IN_GAME:
-                self.game_controller.handle_events(events, self.game_model)
+                self.game_controller.handle_events(events)
                 self.game_controller.run_game(mouse_pos)
                 self.game_view.draw(self.game_model, self.assets)
             elif self.current_game_state == config.GameStateMap.NEW_GAME:

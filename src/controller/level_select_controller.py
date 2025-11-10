@@ -1,7 +1,6 @@
 import pygame
 
 from src.config import GameStateMap
-from src.view import game_view
 from src.model import game_model
 
 
@@ -24,19 +23,17 @@ class LevelSelectController:
                 if key == "main_menu":
                     self.game_manager.current_game_state = GameStateMap.MAIN_MENU
                 elif key == "select":
+                    if self.assets.get_level_data(f"src/level_data/level_data_{self.view.level_selected}.json") is None:
+                        return
+
                     self.game_manager.game_model = game_model.GameModel()
                     self.game_manager.game_model.load_level(f"src/level_data/level_data_{self.view.level_selected}.json", self.assets)
-                    # self.game_manager.game_view.model = self.game_manager.game_model
-                    # self.game_manager.game_controller.model = self.game_manager.game_model
-                    # self.game_manager.game_view.panels["map"].game_model = self.game_manager.game_model
                     self.game_manager.game_view.update_full_panels()
-                    # self.game_manager.game_view.panels["map"].update_new_map()
-                    # self.game_manager.game_view.panels["execution"].game_model = self.game_manager.game_model
                     self.game_manager.current_game_state = GameStateMap.IN_GAME
                 return
 
         for i, level_slot_rect in enumerate(self.view.level_slot_rects):
-            if level_slot_rect.collidepoint(mouse_pos):
+            if level_slot_rect.collidepoint(mouse_pos) and i <= self.game_manager.game_model.get_current_level_unlocked():
                 self.view.level_selected = i
 
     def __handle_key_pressed(self):
@@ -47,4 +44,3 @@ class LevelSelectController:
         elif keys_pressed[pygame.K_a]:
             if not self.view.level_selected <= 0:
                 self.view.level_selected -= 1
-

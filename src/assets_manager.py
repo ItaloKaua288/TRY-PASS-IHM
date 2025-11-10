@@ -5,13 +5,10 @@ from os import path, listdir
 
 from src import config
 
-from pathlib import Path
-
 
 class AssetsManager:
     def __init__(self):
-        self.base_path = Path(__file__).parent.parent
-        self.assets_path = path.join(self.base_path, 'src', 'assets')
+        self.assets_path = path.join(config.BASE_PATH, 'src', 'assets')
         self.images = {}
         self.fonts = {}
         self.tilesets = {}
@@ -33,7 +30,7 @@ class AssetsManager:
             self.images[relative_path] = pygame.image.load(full_path).convert_alpha()
         return self.images[relative_path]
 
-    def get_tileset(self, relative_path, tile_size):
+    def get_tileset(self, relative_path):
         if relative_path not in self.tilesets:
             self.tilesets[relative_path] = {}
             folder_path = path.join(self.assets_path, relative_path)
@@ -46,7 +43,7 @@ class AssetsManager:
 
     def get_level_data(self, relative_path):
         if relative_path not in self.level_data:
-            full_path = path.join(self.base_path, relative_path)
+            full_path = path.join(config.BASE_PATH, relative_path)
             try:
                 with open(full_path, 'r', encoding='utf-8') as file:
                     level_data = json.load(file)
@@ -59,6 +56,7 @@ class AssetsManager:
                         "interactable_objects": level_data["interactable_objects"],
                         "available_actions": level_data["available_actions"]
                     }
-            except (FileNotFoundError, KeyError) as e:
+                    file.close()
+            except (FileNotFoundError, KeyError):
                 return None
         return self.level_data[relative_path]
