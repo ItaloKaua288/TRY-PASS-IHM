@@ -59,8 +59,13 @@ class GameController:
                 player_rect = map_panel.get_player_rect_updated(game_model.player.rect)
                 for key, map_items_rect in map_panel.get_interactable_rect_list_updated().items():
                     for j, map_item_rect in enumerate(map_items_rect):
+                        print(player_rect.colliderect(map_item_rect))
                         if player_rect.colliderect(map_item_rect):
                             self._handle_map_item_interacted(key, j)
+                    for enemy in self.game_manager.game_model.enemy_list:
+                        print(player_rect.center, enemy.rect.center)
+                        if player_rect.colliderect(enemy.rect):
+                            print(True)
 
             game_model.reset_sequence()
             game_model.game_state = GameState.CODING

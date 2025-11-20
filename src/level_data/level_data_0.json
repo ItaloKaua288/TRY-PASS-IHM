@@ -18,5 +18,6 @@
     "interactable_objects": {
       "chest.png": [[[7, 5], "key.png"]],
       "door.png": [[[8, 5]]]
-    }
+    },
+    "enemies": {}
 }

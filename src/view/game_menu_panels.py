@@ -84,6 +84,8 @@ class MapPanel:
         self.image.blit(self.static_map_image, self.camera.apply_offset(self.static_map_image.get_rect()))
 
         self.image.blit(model.player.image, self.camera.apply_offset(model.player.rect))
+        for enemy in model.enemy_list:
+            self.image.blit(enemy.image, self.camera.apply_offset(enemy.rect))
 
         screen.blit(self.image, self.rect)
 

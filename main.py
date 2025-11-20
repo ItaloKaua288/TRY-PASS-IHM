@@ -1,10 +1,15 @@
-import pygame
+import pygame, os, sys
 
 from src import assets_manager
 from src.view import game_view, main_menu_view, level_select_view
 from src.model import  game_model
 from src.controller import game_controller, main_menu_controller, level_select_controller
 from src import config
+
+dirpath = os.getcwd()
+sys.path.append(dirpath)
+if getattr(sys, "frozen", False):
+    os.chdir(sys._MEIPASS)
 
 class Game:
     def __init__(self):

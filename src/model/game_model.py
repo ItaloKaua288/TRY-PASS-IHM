@@ -1,4 +1,4 @@
-from . import player
+from . import player, enemy
 from src.model.items import Chest, Door, Item
 from src.config import TILE_SIZE, BASE_PATH
 from os import path
@@ -15,6 +15,7 @@ class GameModel:
         self.final_objective_pos = None
         self.objective_text = None
         self.player = None
+        self.enemy_list = []
         self.tile_map = []
         self.walkable_tiles = {9, 10}
         self.interactable_objects = {}
@@ -57,6 +58,11 @@ class GameModel:
                     door = Door(item_pos, assets)
                     item_class_list.append(door)
             self.interactable_objects[key] = item_class_list
+
+        for key, enemy_pos_list in level_data["enemies"].items():
+            for pos in enemy_pos_list:
+                pixel_pos = (pos[0] * TILE_SIZE, pos[1] * TILE_SIZE)
+                self.enemy_list.append(enemy.DefaultEnemy(1, pixel_pos, assets))
 
         with open(path.join(BASE_PATH, "src", "level_data", "game_save.json"), 'r', encoding='utf-8') as file:
             game_save = json.load(file)

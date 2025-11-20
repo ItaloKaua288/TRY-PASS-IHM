@@ -54,7 +54,8 @@ class AssetsManager:
                         "player_start_pos": level_data["player_start_pos"],
                         "final_objective_pos": level_data["final_objective_pos"],
                         "interactable_objects": level_data["interactable_objects"],
-                        "available_actions": level_data["available_actions"]
+                        "available_actions": level_data["available_actions"],
+                        "enemies": level_data["enemies"]
                     }
                     file.close()
             except (FileNotFoundError, KeyError):
