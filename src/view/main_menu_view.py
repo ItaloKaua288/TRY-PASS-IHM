@@ -1,63 +1,105 @@
 import pygame
-from src.view.ui_elements import TextButton
-from src.view.game_menu_panels import OptionsPanel
-from src.config import Colors
+from src.utils.settings import Colors
 
-class MainMenuView:
+
+class MenuView:
     def __init__(self, screen, assets):
         self.screen = screen
-        self.width, self.height = screen.get_size()
+        self.assets = assets
 
-        self.image = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
+        self.font = self.assets.get_font("Monospace", 35)
+        self.title_font = self.assets.get_font("Monospace", 80)
 
-        self.panels = {}
-        self.buttons = {}
-        self._create_buttons(assets)
-        self._create_panels(assets)
-        self._create_static_elements(assets)
+        self.options = ["Continuar", "Novo Jogo", "Opções", "Sair"]
+        self.option_selected = None
 
-    def _create_buttons(self, assets):
-        menu_font = assets.get_font("Monospace", 30)
-        center_x = self.width // 2
-        center_y = self.height // 2
+        self._continue_button_is_visible = False
 
-        self.buttons = {
-            "new_game": TextButton("Novo Jogo", menu_font, (center_x, center_y), Colors.TRANSPARENT_COLOR, Colors.TRANSPARENT_COLOR, text_color=Colors.WHITE_COLOR, text_color_hover=Colors.GRAY_COLOR),
-            "options": TextButton("Opções", menu_font, (center_x, center_y + 35), Colors.TRANSPARENT_COLOR, Colors.TRANSPARENT_COLOR, text_color=Colors.WHITE_COLOR, text_color_hover=Colors.GRAY_COLOR),
-            "quit": TextButton("Sair", menu_font, (center_x, center_y + 75), Colors.TRANSPARENT_COLOR, Colors.TRANSPARENT_COLOR, text_color=Colors.WHITE_COLOR, text_color_hover=Colors.GRAY_COLOR)
-        }
+        self.options_surfaces = {}
+        self.options_rects = []
 
-    def _create_panels(self, assets):
-        self.panels = {
-            "options": OptionsPanel((400, 200), (self.width // 2, self.height // 2), assets.get_font("Monospace", 20), assets),
-        }
+        self.background = self.__create_background()
 
-    def _create_static_elements(self, assets):
-        self.sprite_character = assets.get_image("sprites/main_character/idle_0.png").copy()
-        self.sprite_character.set_alpha(40)
+        self.__update_layout()
 
-        title_font = assets.get_font("Monospace", 80)
-        self.title_surf = title_font.render("TRY:PASS", True, Colors.WHITE_COLOR)
+    @property
+    def continue_button_is_visible(self):
+        return self._continue_button_is_visible
 
-    def update(self, mouse_pos):
-        for button in self.buttons.values():
-            button.update(mouse_pos)
+    @continue_button_is_visible.setter
+    def continue_button_is_visible(self, value):
+        """
+        Setter Mágico: Quando o controller muda essa variável,
+        o layout visual e as hitboxes (rects) se reorganizam automaticamente.
+        """
+        if self._continue_button_is_visible != value:
+            self._continue_button_is_visible = value
+            self.__update_layout()
 
-        for panel in self.panels.values():
-            panel.update(mouse_pos)
+    def __create_background(self):
+        """Cria o background estático apenas uma vez na inicialização."""
+        background_surf = pygame.Surface((self.screen.get_width(), self.screen.get_height()))
+        background_surf.fill((0, 0, 0))
+
+        title_surf = self.title_font.render("TRY:PASS", True, Colors.WHITE.value)
+        title_rect = title_surf.get_rect(center=(self.screen.get_width() // 2, 80))
+        background_surf.blit(title_surf, title_rect)
+
+        logo_surf = self.assets.get_image("images/icons/logo.png").copy()
+        logo_surf.set_alpha(20)
+        logo_resized = pygame.transform.scale(logo_surf, (600, 600))
+        logo_rect = logo_resized.get_rect(center=(self.screen.get_width() // 2, self.screen.get_height() // 2))
+        background_surf.blit(logo_resized, logo_rect)
+
+        return background_surf
+
+    def __update_layout(self):
+        """
+        Recalcula posições e superfícies de texto.
+        Chamado apenas na inicialização ou quando a visibilidade muda.
+        """
+        self.options_rects = []
+        self.options_surfaces = {}
+
+        screen_center_x = self.screen.get_width() // 2
+        start_y = self.screen.get_height() // 2 - 50
+
+        spacing = 50
+        current_y_offset = 0
+
+        for i, option in enumerate(self.options):
+            surf_normal = self.font.render(option, True, Colors.WHITE.value)
+            surf_selected = self.font.render(option, True, Colors.GRAY.value)
+
+            rect = surf_normal.get_rect()
+
+            if option == "Continuar" and not self._continue_button_is_visible:
+                rect.topleft = (-1000, -1000)
+            else:
+                rect.center = (screen_center_x, start_y + current_y_offset)
+                current_y_offset += spacing
+
+            self.options_rects.append(rect)
+            self.options_surfaces[i] = {"normal": surf_normal, "selected": surf_selected}
+
+    def update(self):
+        """Se houver animações de fundo ou partículas, atualize aqui."""
+        pass
 
     def draw(self):
-        self.image.fill(Colors.BLACK_COLOR)
+        """Desenha o menu usando os assets pré-calculados."""
+        self.screen.blit(self.background, (0, 0))
 
-        center_x = self.width // 2
-        center_y = self.height // 2
-        self.image.blit(self.sprite_character, self.sprite_character.get_rect(center=(center_x, center_y)))
-        self.image.blit(self.title_surf, self.title_surf.get_rect(center=(center_x, 80)))
+        for i, option in enumerate(self.options):
+            if option == "Continuar" and not self._continue_button_is_visible:
+                continue
 
-        for button in self.buttons.values():
-            button.draw(self.image)
+            rect = self.options_rects[i]
 
-        for panel in self.panels.values():
-            panel.draw(self.image, None)
+            if self.option_selected == i:
+                surf = self.options_surfaces[i]["selected"]
+            else:
+                surf = self.options_surfaces[i]["normal"]
 
-        self.screen.blit(self.image, (0, 0))
+            self.screen.blit(surf, rect)
+

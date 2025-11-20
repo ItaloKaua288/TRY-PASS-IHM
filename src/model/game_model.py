@@ -1,147 +1,155 @@
-from . import player, enemy
-from src.model.items import Chest, Door, Item
-from src.config import TILE_SIZE, BASE_PATH
-from os import path
 import json
+import re
+from os import path, listdir
 
-
-class GameState:
-    CODING = "CODING"
-    EXECUTING = "EXECUTING"
+from src.model.enemy import DefaultEnemy
+from src.model.player import Player
+from src.utils.settings import BASE_PATH, TILE_SIZE, TOTAL_SLOTS_EXECUTION
 
 
 class GameModel:
-    def __init__(self):
+    def __init__(self, current_level=1):
+        self.map = None
+        self.constraints = None
+        self.player_start = None
+        self.config = None
+        self.meta = None
+        self.entities = {}
+        self.current_level = current_level
+        self.tile_map_surf = {}
         self.final_objective_pos = None
-        self.objective_text = None
+
+        self.enemies = []
+
         self.player = None
-        self.enemy_list = []
-        self.tile_map = []
-        self.walkable_tiles = {9, 10}
-        self.interactable_objects = {}
-        self.available_actions = []
 
-        self.last_level_played = 0
+        self.execution_queue = []
 
-        self.running = True
+        self.current_level_unlocked = self.__load_save_game()
 
-        self.actions_sequence = []
-        self.current_action_index = -1
-        self.last_action_index = -1
+    def load_level(self, assets):
+        """Carrega os dados do JSON e inicializa as entidades."""
+        self.execution_queue = []
 
-        self.game_state = GameState.CODING
+        self.tile_map_surf = assets.get_tileset("images/sprites/tiles_map")
 
-    def load_level(self, level_filepath, assets):
-        level_data = assets.get_level_data(level_filepath)
-        if not level_data:
-            return False
+        file_path = path.join(BASE_PATH, "level_data", f"level_data_{self.current_level}.json")
 
-        self.tile_map = level_data["tile_map"]
-        self.objective_text = level_data["objective_text"]
+        try:
+            with open(file_path, "r", encoding='utf-8') as file:
+                level_data = json.load(file)
 
-        player_pos_pixel = level_data["player_start_pos"][0] * TILE_SIZE, level_data["player_start_pos"][1] * TILE_SIZE
-        self.player = player.Player(player_pos_pixel, assets)
-        self.available_actions = level_data["available_actions"]
-        self.final_objective_pos = level_data["final_objective_pos"][0] * TILE_SIZE, level_data["final_objective_pos"][1] * TILE_SIZE
+                self.meta = level_data["meta"]
+                self.config = level_data["config"]
+                self.player_start = [x * TILE_SIZE for x in level_data["player"]["player_start"].values()]
+                self.final_objective_pos = [x * TILE_SIZE for x in level_data["final_objective"].values()]
+                self.constraints = level_data["constraints"]
+                self.map = level_data["map"]
 
-        for key, item_list in level_data["interactable_objects"].items():
-            item_class_list = []
-            if key == "chest.png":
-                for item in item_list:
-                    item_pos = (item[0][0] * TILE_SIZE, item[0][1] * TILE_SIZE)
-                    internal_items = [Item(item_name.split(".")[0], assets) for item_name in item[1:]]
-                    chest = Chest(item_pos, assets, internal_items)
-                    item_class_list.append(chest)
-            elif key == "door.png":
-                for item in item_list:
-                    item_pos = (item[0][0] * TILE_SIZE, item[0][1] * TILE_SIZE)
-                    door = Door(item_pos, assets)
-                    item_class_list.append(door)
-            self.interactable_objects[key] = item_class_list
+                self.entities = {}
+                for entity in level_data["entities"]:
+                    entity["pos"] = [x * TILE_SIZE for x in entity["pos"].values()]
 
-        for key, enemy_pos_list in level_data["enemies"].items():
-            for pos in enemy_pos_list:
-                pixel_pos = (pos[0] * TILE_SIZE, pos[1] * TILE_SIZE)
-                self.enemy_list.append(enemy.DefaultEnemy(1, pixel_pos, assets))
+                    if entity["type"] == "enemy":
+                        self.enemies.append(
+                            DefaultEnemy(
+                                entity["properties"]["life"],
+                                entity["pos"],
+                                entity["behavior"]["pattern"],
+                                assets,
+                            )
+                        )
 
-        with open(path.join(BASE_PATH, "src", "level_data", "game_save.json"), 'r', encoding='utf-8') as file:
-            game_save = json.load(file)
-            self.last_level_played = game_save["last_level_played"]
-            file.close()
-        return True
+                    if self.entities.keys().__contains__(entity["type"]):
+                        self.entities[entity["type"]].append(entity)
+                    else:
+                        self.entities[entity["type"]] = [entity]
 
-    def get_count_collectibles_available(self):
-        count = 0
-        for item in self.interactable_objects["chest.png"]:
-            if not item.is_interacted:
-                count += 1
-        return count
+                self.player = Player(self.player_start, assets)
+                self.player.direction = level_data["player"]["direction"]
+        except FileNotFoundError:
+            print(f"ERRO: Level {self.current_level} não encontrado.")
+            if self.current_level != 1:
+                print("Tentando carregar o Nível 1 como fallback...")
+                self.current_level = 1
+                self.load_level(assets)
+            else:
+                print("CRÍTICO: Nível 1 também não existe. Verifique os arquivos.")
 
-    def add_action_to_sequence(self, action, pos=-1):
-        if len(self.actions_sequence) >= 26:
+    def add_execution_command(self, command, value=1, index=None):
+        if command is None or len(self.execution_queue) >= TOTAL_SLOTS_EXECUTION:
             return
 
-        if self.game_state == GameState.CODING:
-            if pos >= 0:
-                self.actions_sequence.insert(pos, action)
-            else:
-                self.actions_sequence.append(action)
+        cmd_data = [command, value]
 
-    def change_command_slot(self, command_index, new_index):
-        command = self.actions_sequence.pop(command_index)
-        self.actions_sequence.insert(new_index, command)
+        if index is None:
+            self.execution_queue.append(cmd_data)
+        else:
+            self.execution_queue.insert(index, cmd_data)
 
-    def remove_action_from_sequence(self, index):
-        if self.game_state == GameState.CODING and 0 <= index < len(self.actions_sequence):
-            self.actions_sequence.pop(index)
+    def remove_execution_command(self, index=-1):
+        if 0 <= index < len(self.execution_queue):
+            return self.execution_queue.pop(index)
+        return None
 
-    def start_execution(self):
-        if self.game_state == GameState.CODING and len(self.actions_sequence) > 0:
-            self.game_state = GameState.EXECUTING
+    def clear_execution_commands(self):
+        self.execution_queue.clear()
 
-    def reset_sequence(self):
-        for action in self.actions_sequence:
-            action.is_finished = False
-            self.current_action_index = -1
-        self.last_action_index = -1
+    def switch_command_slot(self, command_index, target_index):
+        if command_index < 0 or command_index >= len(self.execution_queue):
+            return
 
-    def clear_sequence(self):
-        self.actions_sequence.clear()
-        self.game_state = GameState.CODING
+        target_index = max(0, min(target_index, len(self.execution_queue) - 1))
 
-    def update(self):
-        self.player.update()
+        command = self.execution_queue.pop(command_index)
+        self.execution_queue.insert(target_index, command)
 
-    def is_valid_move(self, pos_pixels):
-        pos_pixels_x, pos_pixels_y = pos_pixels
-        pos_x = pos_pixels_x // TILE_SIZE
-        pos_y = pos_pixels_y // TILE_SIZE
-
-        if not (0 <= pos_y < len(self.tile_map) and 0 <= pos_x < len(self.tile_map[0])):
-            return False
-
-        tile_id = self.tile_map[pos_y][pos_x]
-        return tile_id in self.walkable_tiles
-
-    def is_victory(self):
-        return self.final_objective_pos == self.player.target_pos
-
-    def unlock_next_level(self):
-        file_src = path.join(BASE_PATH, "src", "level_data", "game_save.json")
-        game_save = {}
-        with open(file_src, 'r', encoding='utf-8') as file:
-            game_save = json.load(file)
-            game_save["current_level_unlocked"] += 1
-            file.close()
-
-        with open(file_src, 'w', encoding='utf-8') as file:
-            file.write(json.dumps(game_save))
-            file.close()
+    def get_remaining_collectibles_count(self):
+        count = 0
+        for key, entities in self.entities.items():
+            if key != "door" and key != "padlock_wall":
+                for entity in entities:
+                    if "is_opened" in entity["properties"].keys() and not entity["properties"]["is_opened"]:
+                        count += 1
+        return count
 
     def get_current_level_unlocked(self):
-        file_src = path.join(BASE_PATH, "src", "level_data", "game_save.json")
-        with open(file_src, 'r', encoding='utf-8') as file:
-            game_save = json.load(file)
-            current_level_unlocked = game_save["current_level_unlocked"]
-            file.close()
-            return current_level_unlocked
+        return self.current_level_unlocked
+
+    def save_game(self):
+        """Salva o progresso se o jogador desbloqueou um nível novo."""
+        max_available = self.__max_level_available()
+        next_unlock = self.current_level + 1
+
+        self.current_level_unlocked = max(1, min(max_available, next_unlock))
+
+        try:
+            with open(path.join(BASE_PATH, "level_data", "save_game.json"), "w") as file:
+                json.dump({"current_level_unlocked": self.current_level_unlocked}, file, indent=4)
+        except IOError as e:
+            print(f"Erro ao salvar jogo: {e}")
+
+    def __load_save_game(self):
+        save_path = path.join(BASE_PATH, "level_data", "save_game.json")
+        try:
+            with open(save_path, "r") as file:
+                data = json.load(file)
+                return data.get("current_level_unlocked", 1)
+        except (FileNotFoundError, json.JSONDecodeError):
+            return 1
+
+    def __max_level_available(self):
+        count = 0
+        level_dir = path.join(BASE_PATH, "level_data")
+        try:
+            for file in listdir(level_dir):
+                if re.match(r"^level_data_([1-9]\d*)\.json$", file):
+                    count += 1
+        except FileNotFoundError:
+            return 0
+        return count
+
+    def is_available_level(self, level: int):
+        max_level = self.__max_level_available()
+        return 1 <= level <= max_level
+

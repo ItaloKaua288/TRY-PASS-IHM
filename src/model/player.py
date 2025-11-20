@@ -1,146 +1,80 @@
 import pygame
+from src.utils.settings import TILE_SIZE
 
-from src.config import TILE_SIZE
-from src.model.inventory import Inventory
+
+class Inventory:
+    def __init__(self):
+        self.inventory = {}
+        self.handing_item = None
+
+    def add_item(self, item, count=1):
+        if item in self.inventory.keys():
+            self.inventory[item] += count
+        else:
+            self.inventory[item] = count
+
+    def remove_item(self, key):
+        if key in self.inventory.keys():
+            self.inventory[key] -= 1
+
+            if self.inventory[key] <= 0:
+                del self.inventory[key]
 
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, pos, assets):
-        pygame.sprite.Sprite.__init__(self)
-        self.image = None
+        super().__init__()
 
+        self.pos = list(pos)
+        self.assets = assets
         self.inventory = Inventory()
-        self.item_hand = None
 
-        self.is_moving = False
-        self.is_rotating = False
-        self.current_sprite = 0
-        self.animation_speed = 0.01
+        self.direction_list = ["down", "right", "up", "left"]
         self.velocity = 2
+        self.direction = "down"
+        self.state = "idle"
 
-        self.target_pos = pos
-
-        self.directions = [(0, 1, "down"), (-1, 0, "left"), (0, -1, "up"), (1, 0, "right")]
-        self.direction_index = 0
-
-        self.direction_rotate = 1
+        self.current_sprite = 0
+        self.last_tick_sprite_update = 0
         self.rotation_count = 0
-        self.rotation_speed = 0.2
+        self.direction_rotate = 1
 
-        self.change_direction = False
-        self._load_sprites(assets)
+        self.__load_sprites()
 
-    def _load_sprites(self, assets):
-        self.__sprites = {}
+        self.rect = self.image.get_rect(topleft=self.pos)
 
-        idle_imgs = [assets.get_image(f"sprites/main_character/idle_{i}.png") for i in range(2)]
-        rotate_img = [assets.get_image(f"sprites/main_character/rotate_{i}.png") for i in range(2)]
-        moving_imgs = [assets.get_image(f"sprites/main_character/moving_{i}.png") for i in range(2)]
+    def __load_sprites(self):
+        spritesheet = self.assets.get_image("images/sprites/main_character.png")
 
-        self.__sprites["idle"] = {
-            "down": [pygame.transform.smoothscale(img, (TILE_SIZE, TILE_SIZE)) for img in idle_imgs],
-            "left": [pygame.transform.rotate(img, 270) for img in idle_imgs],
-            "up": [pygame.transform.rotate(img, 180) for img in idle_imgs],
-            "right": [pygame.transform.rotate(img, 90) for img in idle_imgs]
-        }
+        states = ["idle", "moving", "rotating"]
+        directions = ["down", "right", "up", "left"]
 
-        self.__sprites["moving"] = {
-            "down": [pygame.transform.smoothscale(img, (TILE_SIZE, TILE_SIZE)) for img in moving_imgs],
-            "left": [pygame.transform.rotate(img, 270) for img in moving_imgs],
-            "up": [pygame.transform.rotate(img, 180) for img in moving_imgs],
-            "right": [pygame.transform.rotate(img, 90) for img in moving_imgs]
-        }
+        FRAME_SIZE = 1000
 
-        right_up = [pygame.transform.rotate(img, 90) for img in rotate_img]
-        up_left = [pygame.transform.rotate(img, 180) for img in rotate_img]
-        left_down = [pygame.transform.rotate(img, 270) for img in rotate_img]
+        self.sprites = {}
+        for i, state in enumerate(states):
+            self.sprites[state] = {}
+            for j, direction in enumerate(directions):
+                sheet_y = i * 3000 + (j + (i % 3)) * FRAME_SIZE
 
-        self.__sprites["rotate"] = {
-            "clockwise": {
-                "up": up_left[::-1],
-                "right": right_up[::-1],
-                "down": rotate_img[::-1],
-                "left": left_down[::-1],
-            },
-            "counterclockwise": {
-                "up": right_up,
-                "left": up_left,
-                "down": left_down,
-                "right": rotate_img,
-            },
-        }
-        self.transform_size((TILE_SIZE, TILE_SIZE))
-        current_state = "moving" if self.is_moving else "idle"
+                frames = []
+                for x in range(4):
+                    sheet_x = x * FRAME_SIZE
 
-        self.image = self.__sprites[current_state][self.directions[self.direction_index][2]][self.current_sprite]
+                    rect_clip = pygame.Rect(sheet_x, sheet_y, FRAME_SIZE, FRAME_SIZE)
+                    subsurface = spritesheet.subsurface(rect_clip)
 
-        self.rect = self.image.get_rect(topleft=self.target_pos)
+                    scaled_frame = pygame.transform.smoothscale(subsurface, (TILE_SIZE, TILE_SIZE))
+                    frames.append(scaled_frame)
 
-    def get_next_tile_pos(self):
-        dx, dy = self.get_direction_vector()
-        return self.rect.x + dx * TILE_SIZE, self.rect.y + dy * TILE_SIZE
+                self.sprites[state][direction] = frames
 
-    def set_next_move(self):
-        if not self.is_moving:
-            dx, dy = self.get_direction_vector()
-            self.target_pos = (self.rect.x + dx * TILE_SIZE, self.rect.y + dy * TILE_SIZE)
-            self.is_moving = True
+        self.image = self.sprites[self.state][self.direction][0]
 
-    def get_direction_vector(self):
-        return self.directions[self.direction_index][:2]
-
-    def _update_rotation(self):
-        if self.rotation_count >= 2:
-            self.rotation_count = 0
-            self.is_rotating = False
-            return
-
-        sprites = self.__sprites["rotate"]
-        if self.direction_rotate > 0:
-            sprites = sprites["clockwise"]
-        elif self.direction_rotate < 0:
-            sprites = sprites["counterclockwise"]
-        self.image = sprites[self.directions[self.direction_index][2]][int(self.rotation_count)]
-        self.rotation_count += self.rotation_speed
-
-    def _update_movement(self):
-        if self.rect.topleft == self.target_pos:
-            self.is_moving = False
-            return
-
-        target_x, target_y = self.target_pos
-
-        if self.rect.x < target_x:
-            self.rect.x = min(self.rect.x + self.velocity, target_x)
-        elif self.rect.x > target_x:
-            self.rect.x = max(self.rect.x - self.velocity, target_x)
-
-        if self.rect.y < target_y:
-            self.rect.y = min(self.rect.y + self.velocity, target_y)
-        elif self.rect.y > target_y:
-            self.rect.y = max(self.rect.y - self.velocity, target_y)
-
-    def _animate_sprites(self, state: str):
-        current_sprites = self.__sprites[state][self.directions[self.direction_index][2]]
-        self.current_sprite = (self.current_sprite + self.animation_speed) % len(current_sprites)
-        self.image = current_sprites[int(self.current_sprite)]
-
-    def transform_size(self, size):
-        for i, state_character in self.__sprites.items():
-            for j, direction in state_character.items():
-                if type(direction) is list:
-                    for k, img in enumerate(direction):
-                        self.__sprites[i][j][k] = pygame.transform.smoothscale(img, size)
-                else:
-                    for k, clock_directions in direction.items():
-                        for y, clock_direction in enumerate(clock_directions):
-                            self.__sprites[i][j][k][y] = pygame.transform.smoothscale(clock_direction, size)
-
-    def update(self):
-        if self.is_rotating:
-            self._update_rotation()
-        elif self.is_moving:
-            self._update_movement()
-            self._animate_sprites("moving")
-        else:
-            self._animate_sprites("idle")
+    def update_rect_position(self):
+        """
+        Método auxiliar para sincronizar a posição lógica (self.pos)
+        com a posição de renderização/colisão (self.rect).
+        O Controller deve chamar isso após mover o player.
+        """
+        self.rect.topleft = self.pos
