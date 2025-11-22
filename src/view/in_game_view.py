@@ -1,5 +1,3 @@
-import sys
-
 import pygame
 from src.utils.settings import Colors, TOTAL_SLOTS_EXECUTION, TILE_SIZE
 
@@ -18,7 +16,9 @@ class GameView:
             "map_bar": self.__create_map_bar(),
             "tools_bar": self.__create_tools_bar(),
             "inventory_bar": self.__create_inventory_bar(),
-            "top_bar": self.__create_top_bar()
+            "help_menu": self.__create_help_menu(),
+            "top_bar": self.__create_top_bar(),
+            "pause_menu": self.__create_pause_menu()
         }
 
         self._current_command_signature = ""
@@ -97,25 +97,22 @@ class GameView:
         surface.blit(title_surf, title_surf.get_rect(center=(surface.get_rect().centerx, 10)))
 
         buttons_name = ["play", "clear"]
-        buttons_pos = [(715, 35), (715, 100)]
+        buttons_pos = [(715, 50), (715, 115)]
         buttons_color = ((Colors.GREEN.value, Colors.DARK_GREEN.value), (Colors.RED.value, Colors.DARK_RED.value))
 
         buttons = {}
         for i, name in enumerate(buttons_name):
             img_name = "trash" if name == "clear" else name
-            btn_icon = pygame.transform.smoothscale(
-                self.assets.get_image(f"images/icons/{img_name}.png").convert_alpha(), (40, 40))
+            btn_icon = pygame.transform.smoothscale(self.assets.get_image(f"images/icons/{img_name}.png").convert_alpha(), (40, 40))
             btn_surface = pygame.Surface((60, 60), pygame.SRCALPHA)
             btn_surface_hover = btn_surface.copy()
             rect = btn_surface.get_rect(center=buttons_pos[i])
 
-            pygame.draw.rect(btn_surface, buttons_color[i][0], btn_surface.get_rect(topleft=(0, 0)), border_radius=10)
-            pygame.draw.rect(btn_surface_hover, buttons_color[i][1], btn_surface.get_rect(topleft=(0, 0)),
-                             border_radius=10)
+            pygame.draw.rect(btn_surface, buttons_color[i][0], btn_surface.get_rect(), border_radius=10)
+            pygame.draw.rect(btn_surface_hover, buttons_color[i][1], btn_surface.get_rect(), border_radius=10)
             btn_surface.blit(btn_icon, btn_surface.get_rect(topleft=(10, 10)))
             btn_surface_hover.blit(btn_icon, btn_surface.get_rect(topleft=(10, 10)))
-            buttons[name] = {"surface": btn_surface, "hover_surface": btn_surface_hover, "rect": rect,
-                             "is_hovered": False}
+            buttons[name] = {"surface": btn_surface, "hover_surface": btn_surface_hover, "rect": rect, "is_hovered": False}
             surface.blit(btn_surface, rect)
 
         slot_rects = []
@@ -237,16 +234,70 @@ class GameView:
         return {"surface": surface, "background": surface, "rect": surface.get_rect(topleft=(760, 565)), "buttons": {},
                 "is_visible": True}
 
+    def __create_help_menu(self):
+        text_font = self.assets.get_font("Monospace", 12, False)
+        help_text_surface = text_font.render(self.model.help, True, Colors.BLACK.value, wraplength=390)
+
+        surface = pygame.Surface((400, help_text_surface.height + 30), pygame.SRCALPHA)
+        pygame.draw.rect(surface, Colors.LIGHT_GRAY.value, surface.get_rect(topleft=(0, 0)), border_radius=10)
+        pygame.draw.rect(surface, Colors.BLACK.value, surface.get_rect(), width=2, border_radius=10)
+        surface_rect = surface.get_rect()
+
+        surface.blit(help_text_surface, (5, 25))
+
+        text_font = self.assets.get_font("Monospace", 15)
+        title_surface = text_font.render("Ajuda", True, Colors.BLACK.value)
+        surface.blit(title_surface, title_surface.get_rect(center=(surface_rect.centerx, 15)))
+
+        return {"surface": surface, "background": surface, "rect": surface.get_rect(center=(900, 60 + surface.height // 2)), "buttons": {}, "is_visible": False}
+
+    def __create_pause_menu(self):
+        surface = pygame.Surface((300, 230), pygame.SRCALPHA)
+        surface_rect = surface.get_rect(center=self.screen.get_rect().center)
+        pygame.draw.rect(surface, Colors.LIGHT_GRAY.value, surface.get_rect(topleft=(0, 0)), border_radius=10)
+        pygame.draw.rect(surface, Colors.WHITE.value, surface.get_rect(topleft=(0, 0)), border_radius=10, width=2)
+        pygame.draw.rect(surface, Colors.BLACK.value, pygame.Rect(5, 40, surface_rect.width - 19, 2))
+
+        font = self.assets.get_font("Monospace", 25)
+        text_surface = font.render("Menu do Jogo", True, Colors.BLACK.value)
+        surface.blit(text_surface, text_surface.get_rect(center=(surface_rect.width // 2, 25)))
+
+        overlay_surface = pygame.Surface(self.screen.get_size(), pygame.SRCALPHA)
+        pygame.draw.rect(overlay_surface, Colors.BLACK.value + (200,), overlay_surface.get_rect(topleft=(0, 0)))
+
+        overlay_surface.blit(surface, surface_rect)
+
+        buttons_name = ("Continuar", "Novo Jogo", "Selecionar Fase", "Voltar ao Inicio", "Sair")
+        buttons = {}
+        for i, name in enumerate(buttons_name):
+            text_surface = font.render(name, True, Colors.BLACK.value)
+            btn_surface = pygame.Surface((surface.width - 10, text_surface.height + 2), pygame.SRCALPHA)
+            btn_hover_surface = btn_surface.copy()
+            btn_rect = btn_surface.get_rect()
+
+            pygame.draw.rect(btn_surface, Colors.GRAY.value, btn_rect, border_radius=10)
+            pygame.draw.rect(btn_hover_surface, Colors.DARK_GRAY.value, btn_rect, border_radius=10)
+
+            text_pos = btn_rect.width // 2 - text_surface.width // 2, 2
+            btn_surface.blit(text_surface, btn_surface.get_rect(topleft=text_pos))
+            btn_hover_surface.blit(text_surface, btn_surface.get_rect(topleft=text_pos))
+
+            btn_pos = surface_rect.width // 2 - btn_rect.width // 2 + surface_rect.x, 50 + i * 35 + surface_rect.y
+            buttons[name] = {"surface": btn_surface, "hover_surface": btn_hover_surface, "rect": btn_surface.get_rect(topleft=btn_pos), "is_hovered": False}
+
+        return {"surface": overlay_surface, "rect": overlay_surface.get_rect(), "default_background": overlay_surface,
+                "buttons": buttons, "menu_rect": surface_rect, "is_visible": False}
+
     def calculate_camera_offset(self):
         player = self.model.player
 
         map_panel = self.panels["map_bar"]
         camera_size = map_panel["surface"].get_size()
         map_size = map_panel["map_surface"].get_size()
-        half_camera_widht = camera_size[0] // 2
+        half_camera_width = camera_size[0] // 2
         half_camera_height = camera_size[1] // 2
 
-        offset_x = player.rect.centerx - half_camera_widht
+        offset_x = player.rect.centerx - half_camera_width
         offset_y = player.rect.centery - half_camera_height
 
         offset_x = max(0, min(offset_x, camera_size[0] - map_size[0]))
@@ -254,11 +305,14 @@ class GameView:
 
         self.camera_offset = [offset_x, offset_y]
 
-    def update(self):
+    def update(self, game_paused=False):
         self.calculate_camera_offset()
         mouse_pos = pygame.mouse.get_pos()
 
         for key, panel_items in self.panels.items():
+            if game_paused and key not in  ("pause_menu", "inventory_bar"):
+                continue
+
             panel_topleft = panel_items["rect"].topleft
             local_mouse_pos = mouse_pos[0] - panel_topleft[0], mouse_pos[1] - panel_topleft[1]
             for button in panel_items["buttons"].values():
@@ -268,21 +322,6 @@ class GameView:
                 else:
                     panel_items["surface"].blit(button["surface"], button["rect"])
                     button["is_hovered"] = False
-
-            if key == "execution_bar":
-                for execution_command in self.execution_commands_queue:
-                    if execution_command["buttons"]["remove"]["rect"].collidepoint(local_mouse_pos):
-                        execution_command["buttons"]["remove"]["is_hovered"] = True
-                    else:
-                        execution_command["buttons"]["remove"]["is_hovered"] = False
-
-                repeat_local_mouse_pos = mouse_pos[0] - panel_items["config_repeat"]["rect"].topleft[0], mouse_pos[1] - \
-                                         panel_items["config_repeat"]["rect"].topleft[1]
-                for button in panel_items["config_repeat"]["buttons"].values():
-                    if button["rect"].collidepoint(repeat_local_mouse_pos):
-                        button["is_hovered"] = True
-                    else:
-                        button["is_hovered"] = False
 
         self.__update_map_bar()
         self.__update_execution_bar()
@@ -380,13 +419,23 @@ class GameView:
         mouse_pos = pygame.mouse.get_pos()
         local_mouse_pos = mouse_pos[0] - panel["rect"].topleft[0], mouse_pos[1] - panel["rect"].topleft[1]
 
-        for execution_command in self.execution_commands_queue:
-            if execution_command["buttons"]["remove"]["rect"].collidepoint(local_mouse_pos):
-                panel["surface"].blit(execution_command["buttons"]["remove"]["hover_surface"],
-                                      execution_command["buttons"]["remove"]["rect"])
+        for button in panel["buttons"].values():
+            if button["is_hovered"]:
+                panel["surface"].blit(button["hover_surface"], button["rect"])
             else:
-                panel["surface"].blit(execution_command["buttons"]["remove"]["surface"],
-                                      execution_command["buttons"]["remove"]["rect"])
+                panel["surface"].blit(button["surface"], button["rect"])
+
+        repeat_local_mouse_pos = mouse_pos[0] - panel["config_repeat"]["rect"].topleft[0], mouse_pos[1] - panel["config_repeat"]["rect"].topleft[1]
+        for button in panel["config_repeat"]["buttons"].values():
+            button["is_hovered"] = button["rect"].collidepoint(repeat_local_mouse_pos)
+
+        for execution_command in self.execution_commands_queue:
+            execution_command["buttons"]["remove"]["is_hovered"] = execution_command["buttons"]["remove"]["rect"].collidepoint(local_mouse_pos)
+
+            if execution_command["buttons"]["remove"]["rect"].collidepoint(local_mouse_pos):
+                panel["surface"].blit(execution_command["buttons"]["remove"]["hover_surface"], execution_command["buttons"]["remove"]["rect"])
+            else:
+                panel["surface"].blit(execution_command["buttons"]["remove"]["surface"], execution_command["buttons"]["remove"]["rect"])
 
         if self.current_command_executing is not None:
             pygame.draw.rect(panel["surface"], Colors.GREEN.value, panel["slot_rects"][self.current_command_executing])
@@ -401,27 +450,29 @@ class GameView:
             remove_hover_surface = remove_surface.copy()
             remove_surface.fill(Colors.GRAY.value)
             remove_hover_surface.fill(Colors.DARK_GRAY.value)
-            remove_icon = pygame.transform.smoothscale(
-                self.assets.get_image(f"images/icons/cancel.png").convert_alpha(), (10, 10))
+            remove_icon = pygame.transform.smoothscale(self.assets.get_image(f"images/icons/cancel.png").convert_alpha(), (10, 10))
             remove_surface.blit(remove_icon, (3, 3))
             remove_hover_surface.blit(remove_icon, (3, 3))
 
             for i, command in enumerate(execution_queue):
-                remove_rect = remove_surface.get_rect(
-                    topleft=(i % 10 * panel["slot_rects"][i].width + panel["slot_rects"][i].width - 11,
-                             panel["slot_rects"][i].topleft[1]))
-                icon_surf = pygame.transform.smoothscale(
-                    self.assets.get_image(f"images/icons/{command[0]}.png").convert_alpha(), (55, 55))
+                remove_rect = remove_surface.get_rect(topleft=(i % 10 * panel["slot_rects"][i].width + panel["slot_rects"][i].width - 11, panel["slot_rects"][i].topleft[1]))
+                icon_surf = pygame.transform.smoothscale(self.assets.get_image(f"images/icons/{command[0]}.png").convert_alpha(), (55, 55))
                 icon_rect = icon_surf.get_rect(center=panel["slot_rects"][i].center)
                 panel["surface"].blit(icon_surf, icon_rect)
                 panel["surface"].blit(remove_surface, remove_rect)
-                command_buttons.append({"surface": icon_surf, "rect": icon_rect, "buttons": {
-                    "remove": {"surface": remove_surface, "hover_surface": remove_hover_surface, "rect": remove_rect,
-                               "is_hovered": False}}})
+
+                command_buttons.append({"type": command[0], "surface": icon_surf, "rect": icon_rect, "buttons": {"remove": {"surface": remove_surface, "hover_surface": remove_hover_surface, "rect": remove_rect, "is_hovered": False}}})
                 self.execution_commands_queue = command_buttons
         else:
-            for command in self.execution_commands_queue:
+            for i, command in enumerate(self.execution_commands_queue):
                 panel["surface"].blit(command["surface"], command["rect"])
+
+                if command["type"] == "repeat":
+                    count_surface = self.assets.get_font("Monospace", 17).render(str(execution_queue[i][1]), True, Colors.WHITE.value, Colors.GRAY.value)
+                    panel["surface"].blit(count_surface,
+                                          (command["rect"].x + command["rect"].width - count_surface.width + 3,
+                                                 command["rect"].y + command["rect"].height - count_surface.height + 3)
+                    )
 
         if self.dragged_command["command"] is not None:
             panel["surface"].blit(self.dragged_command["command"]["surface"], local_mouse_pos)
@@ -464,6 +515,5 @@ class GameView:
                 self.screen.blit(panel["surface"], panel["rect"])
 
         if self.panels["execution_bar"]["config_repeat"]["is_visible"]:
-            self.screen.blit(self.panels["execution_bar"]["config_repeat"]["surface"],
-                             self.panels["execution_bar"]["config_repeat"]["rect"])
+            self.screen.blit(self.panels["execution_bar"]["config_repeat"]["surface"], self.panels["execution_bar"]["config_repeat"]["rect"])
 

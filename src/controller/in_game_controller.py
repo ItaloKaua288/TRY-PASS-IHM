@@ -36,8 +36,10 @@ class GameController:
 
         state_from_events = self.__handle_events(events)
 
+        self.view.update(self.game_is_paused)
+
         if self.game_is_paused:
-            return None
+            return state_from_events
 
         if state_from_events:
             next_state = state_from_events
@@ -53,8 +55,6 @@ class GameController:
         death_state = self.__interact_enemy_map()
         if death_state:
             next_state = death_state
-
-        self.view.update()
 
         return next_state
 
@@ -82,21 +82,20 @@ class GameController:
             if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
                 self.__update_hold_state()
 
-                if self.view.panels["top_bar"]["rect"].collidepoint(mouse_pos):
-                    local_pos = (mouse_pos[0] - self.view.panels["top_bar"]["rect"].x,
-                                 mouse_pos[1] - self.view.panels["top_bar"]["rect"].y)
+                if self.view.panels["pause_menu"]["is_visible"] and self.view.panels["pause_menu"]["menu_rect"].collidepoint(mouse_pos):
+                    return self.__handle_pause_menu(mouse_pos)
+                elif self.view.panels["top_bar"]["rect"].collidepoint(mouse_pos):
+                    local_pos = (mouse_pos[0] - self.view.panels["top_bar"]["rect"].x, mouse_pos[1] - self.view.panels["top_bar"]["rect"].y)
                     return self.__handle_top_bar(local_pos)
-
+                elif self.game_is_paused:
+                    return None
                 elif self.view.panels["inventory_bar"]["is_visible"]:
-                    local_pos = (mouse_pos[0] - self.view.panels["inventory_bar"]["rect"].x,
-                                 mouse_pos[1] - self.view.panels["inventory_bar"]["rect"].y)
+                    local_pos = (mouse_pos[0] - self.view.panels["inventory_bar"]["rect"].x, mouse_pos[1] - self.view.panels["inventory_bar"]["rect"].y)
                     self.__handle_inventory_bar(local_pos)
-
                 else:
                     for key, panel in self.view.panels.items():
                         if panel["rect"].collidepoint(mouse_pos):
                             local_pos = (mouse_pos[0] - panel["rect"].x, mouse_pos[1] - panel["rect"].y)
-
                             if key == "tools_bar":
                                 self.__handle_tools_bar(local_pos)
                             elif key == "execution_bar":
@@ -141,16 +140,37 @@ class GameController:
     def __handle_top_bar(self, mouse_pos):
         for key, button in self.view.panels["top_bar"]["buttons"].items():
             if button["rect"].collidepoint(mouse_pos):
-                if key == "options":
+                if not self.view.panels["pause_menu"]["is_visible"]:
+                    if key == "options":
+                        pause_menu = self.view.panels["pause_menu"]
+                        pause_menu["is_visible"] = not pause_menu["is_visible"]
+                        self.game_is_paused = pause_menu["is_visible"]
+                    elif key == "idea":
+                        help_menu = self.view.panels["help_menu"]
+                        help_menu["is_visible"] = not help_menu["is_visible"]
+                    elif key == "inventory" and not self.view.panels["pause_menu"]["is_visible"]:
+                        self.view.panels["inventory_bar"]["is_visible"] = not self.view.panels["inventory_bar"]["is_visible"]
+                        self.game_is_paused = self.view.panels["inventory_bar"]["is_visible"]
+                return None
+        return None
+
+    def __handle_pause_menu(self, mouse_pos):
+        pause_menu = self.view.panels["pause_menu"]
+
+        for key, button in pause_menu["buttons"].items():
+            if button["rect"].collidepoint(mouse_pos):
+                if key == "Continuar":
+                    pause_menu["is_visible"] = False
+                    self.game_is_paused = False
+                elif key == "Novo Jogo":
+                    return GameState.NEW_GAME
+                elif key == "Selecionar Fase":
+                    return GameState.LEVEL_SELECT
+                elif key == "Voltar ao Inicio":
                     return GameState.MAIN_MENU
-                elif key == "idea":
-                    print("Dica clicada")
-                elif key == "inventory":
-                    self.view.panels["inventory_bar"]["is_visible"] = not self.view.panels["inventory_bar"]["is_visible"]
-                    if self.view.panels["inventory_bar"]["is_visible"]:
-                        self.game_is_paused = True
-                    else:
-                        self.game_is_paused = False
+                elif key == "Sair":
+                    return GameState.QUIT
+                return None
         return None
 
     def __handle_inventory_bar(self, mouse_pos):
@@ -170,6 +190,7 @@ class GameController:
                         player_inventory.remove_item(key)
                     except IndexError:
                         pass
+                    return
 
     def __handle_execution_bar(self, mouse_pos):
         if self.is_executing: return
@@ -204,9 +225,7 @@ class GameController:
                             panel["config_repeat"]["repeat_num"] = self.game_model.execution_queue[i][1]
 
                             global_mouse = pygame.mouse.get_pos()
-                            panel["config_repeat"]["rect"].topleft = (global_mouse[0],
-                                                                      global_mouse[1] - panel["config_repeat"][
-                                                                          "rect"].height // 2)
+                            panel["config_repeat"]["rect"].topleft = (global_mouse[0], global_mouse[1] - panel["config_repeat"]["rect"].height // 2)
                             panel["config_repeat"]["command_index"] = i
                 except IndexError:
                     pass
@@ -215,8 +234,7 @@ class GameController:
         for key, button in self.view.panels["execution_bar"]["buttons"].items():
             if button["rect"].collidepoint(mouse_pos):
                 if key == "play":
-                    self.execution_interpreted_queue = self.command_interpreter.create_sequence_execution(
-                        self.game_model.execution_queue)
+                    self.execution_interpreted_queue = self.command_interpreter.create_sequence_execution(self.game_model.execution_queue)
                     self.is_executing = True
                 elif key == "clear":
                     self.execution_interpreted_queue.clear()
@@ -299,6 +317,7 @@ class GameController:
                             for item in entities_data[key][i]["properties"]["items"]:
                                 player.inventory.add_item(item["id"], item["qty"])
                                 entities_data[key][i]["properties"]["is_opened"] = True
+                    return
 
     def __interact_enemy_map(self):
         player = self.game_model.player

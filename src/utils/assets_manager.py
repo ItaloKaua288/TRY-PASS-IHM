@@ -15,11 +15,11 @@ class AssetsManager:
         self.frames = {}
         self.level_data = {}
 
-    def get_font(self, name, size):
-        key = f"{name}_{size}"
+    def get_font(self, name, size, bold=True):
+        key = f"{name}_{size}_{bold}"
         if key not in self.fonts:
             try:
-                self.fonts[key] = pygame.font.SysFont(name, size, True)
+                self.fonts[key] = pygame.font.SysFont(name, size, bold=bold)
             except pygame.error:
                 self.fonts[key] = pygame.font.SysFont(None, size)
         return self.fonts[key]

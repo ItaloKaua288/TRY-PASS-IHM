@@ -36,25 +36,20 @@ class Game:
         if self.state == GameState.MAIN_MENU:
             view = MenuView(self.screen, self.assets)
             self.current_controller = MenuController(view, self.game_model)
-
         elif self.state == GameState.LEVEL_SELECT:
             view = LevelSelectView(self.screen, self.assets)
             self.current_controller = LevelSelectController(view, self.assets, self.game_model)
-
         elif self.state == GameState.IN_GAME:
             self.game_model.load_level(self.assets)
             view = GameView(self.screen, self.assets, self.game_model)
             self.current_controller = GameController(view, self.game_model)
-
         elif self.state == GameState.CONTINUE_GAME:
             level = self.game_model.get_current_level_unlocked()
             self.game_model.current_level = level
             self._switch_state(GameState.IN_GAME)
-
         elif self.state == GameState.NEW_GAME:
             self.game_model.current_level = 1
             self._switch_state(GameState.IN_GAME)
-
         elif self.state == GameState.QUIT:
             pygame.quit()
             sys.exit()

@@ -9,6 +9,7 @@ from src.utils.settings import BASE_PATH, TILE_SIZE, TOTAL_SLOTS_EXECUTION
 
 class GameModel:
     def __init__(self, current_level=1):
+        self.help = None
         self.map = None
         self.constraints = None
         self.player_start = None
@@ -30,6 +31,7 @@ class GameModel:
     def load_level(self, assets):
         """Carrega os dados do JSON e inicializa as entidades."""
         self.execution_queue = []
+        self.enemies = []
 
         self.tile_map_surf = assets.get_tileset("images/sprites/tiles_map")
 
@@ -45,6 +47,7 @@ class GameModel:
                 self.final_objective_pos = [x * TILE_SIZE for x in level_data["final_objective"].values()]
                 self.constraints = level_data["constraints"]
                 self.map = level_data["map"]
+                self.help = level_data["help"]
 
                 self.entities = {}
                 for entity in level_data["entities"]:

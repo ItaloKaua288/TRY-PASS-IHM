@@ -16,7 +16,7 @@
     "direction": "right"
   },
   "final_objective": {"x": 17, "y": 7},
-  "help": "",
+  "help": "Monte a sequência de comandos na área de execução, canto inferior da tela, utilizando as ferramentas disponiveis na área de ferramentas, na direita da tela\nEx: Andar - Andar - Virar",
   "constraints": {
     "available_commands": ["walk", "turn_right", "turn_left"]
   },

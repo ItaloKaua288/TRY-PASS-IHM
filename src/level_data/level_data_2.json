@@ -16,6 +16,7 @@
     "direction": "down"
   },
   "final_objective": {"x": 17, "y": 9},
+  "help": "A barreira com o cadeado só se abrirá caso você esteja com uma chave equipada\n- Chegue até o bau\n- Abra o inventario\n- Clique na chave\n- Com a chave equipada tente passar da barreira",
   "constraints": {
     "available_commands": ["walk", "turn_right", "turn_left", "repeat", "end_repeat"]
   },
