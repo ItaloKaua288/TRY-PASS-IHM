@@ -45,14 +45,13 @@ class DefaultEntityController:
 
         if self.entity.rect.x < target_x:
             self.entity.rect.x = min(self.entity.rect.x + self.entity.velocity, target_x)
-        elif self.entity.rect.x > target_x:
+        else:
             self.entity.rect.x = max(self.entity.rect.x - self.entity.velocity, target_x)
 
         if self.entity.rect.y < target_y:
             self.entity.rect.y = min(self.entity.rect.y + self.entity.velocity, target_y)
-        elif self.entity.rect.y > target_y:
+        else:
             self.entity.rect.y = max(self.entity.rect.y - self.entity.velocity, target_y)
-
 
     def __update_rotating(self):
         if self.entity.last_tick_sprite_update >= 5:
@@ -61,11 +60,11 @@ class DefaultEntityController:
             else:
                 self.entity.current_sprite += 1
             self.entity.last_tick_sprite_update = 0
-        self.entity.last_tick_sprite_update += 1
+        else:
+            self.entity.last_tick_sprite_update += 1
 
         if self.entity.current_sprite >= 3:
-
-            self.rotation_count = 0
+            # self.rotation_count = 0
             self.entity.state = "idle"
 
             current_direction_index = self.entity.direction_list.index(self.entity.direction)
@@ -77,7 +76,7 @@ class DefaultEntityController:
                     (current_direction_index - 1) % len(self.entity.direction_list)]
             return
 
-        self.entity.rotation_count += self.entity.velocity
+        # self.entity.rotation_count += self.entity.velocity
 
     def move(self):
         if not self.__next_move_is_valid():

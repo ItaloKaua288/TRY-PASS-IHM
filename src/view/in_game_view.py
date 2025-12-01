@@ -26,6 +26,8 @@ class GameView:
         self.current_command_executing = None
         self.camera_offset = [0, 0]
 
+        self.items_floating_to_inventory = []
+
         self.dragged_command = {"index": None, "command": None}
 
     def __create_top_bar(self):
@@ -180,11 +182,14 @@ class GameView:
             entities = []
             for item in items:
 
-                item_surface = pygame.transform.smoothscale(self.assets.get_image(f"images/sprites/items/{item["type"]}.png").convert_alpha(), (TILE_SIZE, TILE_SIZE))
-                item_rect = item_surface.get_rect(topleft=item["pos"])
+                # item_surface = pygame.transform.smoothscale(self.assets.get_image(f"images/sprites/items/{item["type"]}.png").convert_alpha(), (TILE_SIZE, TILE_SIZE))
+                item_surface = pygame.transform.smoothscale(self.assets.get_image(f"images/sprites/items/{key}.png").convert_alpha(), (TILE_SIZE, TILE_SIZE))
+                # item_rect = item_surface.get_rect(topleft=item["pos"])
+                item_rect = item_surface.get_rect(topleft=item.pos)
 
-                if item["type"] != "padlock_wall":
-                    map_surface.blit(item_surface, item_rect)
+                # if item["type"] != "padlock_wall":
+                # if key != "padlock_wall":
+                #     map_surface.blit(item_surface, item_rect)
 
                 entities.append({"surface": item_surface, "rect": item_rect})
 
@@ -249,7 +254,7 @@ class GameView:
         title_surface = text_font.render("Ajuda", True, Colors.BLACK.value)
         surface.blit(title_surface, title_surface.get_rect(center=(surface_rect.centerx, 15)))
 
-        return {"surface": surface, "background": surface, "rect": surface.get_rect(center=(900, 60 + surface.height // 2)), "buttons": {}, "is_visible": False}
+        return {"surface": surface, "background": surface, "rect": surface.get_rect(center=(900, 60 + surface.height // 2)), "buttons": {}, "is_visible": True}
 
     def __create_pause_menu(self):
         surface = pygame.Surface((300, 230), pygame.SRCALPHA)
@@ -323,6 +328,7 @@ class GameView:
                     panel_items["surface"].blit(button["surface"], button["rect"])
                     button["is_hovered"] = False
 
+        self.__update_items_floating_to_inventory()
         self.__update_map_bar()
         self.__update_execution_bar()
         self.__update_status_bar()
@@ -353,8 +359,20 @@ class GameView:
         player = self.model.player
 
         map_rect = map_panel["map_surface"].get_rect()
-        map_panel["surface"].blit(map_panel["map_surface"],
-                                  (map_rect.x - self.camera_offset[0], map_rect.y - self.camera_offset[1]))
+        map_panel["surface"].blit(map_panel["map_surface"], (map_rect.x - self.camera_offset[0], map_rect.y - self.camera_offset[1]))
+
+        for key, entities in self.model.entities.items():
+            for i, entity in enumerate(entities):
+                if key == "chest":
+                    if not entity.is_opened:
+                        item_surface = pygame.transform.smoothscale(self.assets.get_image(f"images/sprites/items/{key}.png").convert_alpha(), (TILE_SIZE, TILE_SIZE))
+                    else:
+                        item_surface = pygame.transform.smoothscale(self.assets.get_image(f"images/sprites/items/{key}_opened.png").convert_alpha(), (TILE_SIZE, TILE_SIZE))
+                    map_panel["entities"][key][i]["surface"] = item_surface
+                if key == "padlock_wall":
+                    if entity.is_opened:
+                        continue
+                map_panel["surface"].blit(map_panel["entities"][key][i]["surface"], (entity.pos[0] - self.camera_offset[0], entity.pos[1] - self.camera_offset[1]))
 
         player_sprites = player.sprites[player.state]
         if player.direction_rotate < 0 and player.state == "rotating":
@@ -368,16 +386,16 @@ class GameView:
                                    self.model.player.rect.topleft[1] - self.camera_offset[1]))
 
         for enemy in self.model.enemies:
-            map_panel["surface"].blit(enemy.sprites[enemy.state][enemy.direction][enemy.current_sprite],
+            enemy_sprites = enemy.sprites[enemy.state]
+            if enemy.direction_rotate < 0 and enemy.state == "rotating":
+                enemy_sprites = [x for x in enemy_sprites[enemy.direction_list[
+                    (enemy.direction_list.index(enemy.direction) - 1) % len(enemy.direction_list)]]]
+                enemy_sprites.reverse()
+            else:
+                enemy_sprites = enemy_sprites[enemy.direction]
+            map_panel["surface"].blit(enemy_sprites[enemy.current_sprite],
                                       (enemy.rect.topleft[0] - self.camera_offset[0],
                                        enemy.rect.topleft[1] - self.camera_offset[1]))
-
-        if "padlock_wall" in self.model.entities.keys():
-            for key, items in map_panel["entities"].items():
-                if key == "padlock_wall":
-                    for i, item in enumerate(items):
-                        if not self.model.entities[key][i]["properties"]["is_opened"]:
-                            map_panel["surface"].blit(item["surface"], (item["rect"].x - self.camera_offset[0], item["rect"].y - self.camera_offset[1]))
 
     def __update_inventory_bar(self):
         panel = self.panels["inventory_bar"]
@@ -489,6 +507,31 @@ class GameView:
             else:
                 panel["config_repeat"]["surface"].blit(button["surface"], button["rect"])
 
+    def __update_items_floating_to_inventory(self):
+        if not self.items_floating_to_inventory:
+            return
+
+        SPEED = 15
+
+        inventory_btn_pos = self.panels["top_bar"]["buttons"]["inventory"]["rect"].center
+        for item in self.items_floating_to_inventory:
+            if item["surface"] is None:
+                item["surface"] = pygame.transform.smoothscale(self.assets.get_image(f"images/sprites/items/{item["key"]}.png").convert_alpha(), (TILE_SIZE, TILE_SIZE))
+
+            item["pos"] = pygame.math.Vector2(item["pos"][0], item["pos"][1])
+            target = pygame.math.Vector2(inventory_btn_pos[0], inventory_btn_pos[1])
+            distance = item["pos"].distance_to(target)
+
+            if distance <= SPEED:
+                self.items_floating_to_inventory.remove(item)
+                return
+
+            direction_vector = target - item["pos"]
+            direction_vector = direction_vector.normalize()
+            new_pos = item["pos"] + direction_vector * SPEED
+
+            item["pos"] = new_pos
+
     def get_clicked_command_info(self, mouse_pos):
         panel = self.panels["execution_bar"]
         local_mouse_pos = mouse_pos[0] - panel["rect"].topleft[0], mouse_pos[1] - panel["rect"].topleft[1]
@@ -516,4 +559,9 @@ class GameView:
 
         if self.panels["execution_bar"]["config_repeat"]["is_visible"]:
             self.screen.blit(self.panels["execution_bar"]["config_repeat"]["surface"], self.panels["execution_bar"]["config_repeat"]["rect"])
+
+        for item in self.items_floating_to_inventory:
+            if item["surface"] is None:
+                continue
+            self.screen.blit(item["surface"], item["pos"])
 

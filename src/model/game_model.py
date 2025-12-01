@@ -1,8 +1,9 @@
 import json
 import re
 from os import path, listdir
+from pathlib import Path
+from src.model import entities
 
-from src.model.enemy import DefaultEnemy
 from src.model.player import Player
 from src.utils.settings import BASE_PATH, TILE_SIZE, TOTAL_SLOTS_EXECUTION
 
@@ -54,19 +55,40 @@ class GameModel:
                     entity["pos"] = [x * TILE_SIZE for x in entity["pos"].values()]
 
                     if entity["type"] == "enemy":
-                        self.enemies.append(
-                            DefaultEnemy(
-                                entity["properties"]["life"],
-                                entity["pos"],
-                                entity["behavior"]["pattern"],
-                                assets,
-                            )
-                        )
+                        entity_obj = entities.DefaultEnemy(1, entity["pos"], entity["behavior"]["pattern"], assets, entity["subtype"])
+                        entity_obj.direction = entity["behavior"]["direction"]
+                        self.enemies.append(entity_obj)
+                        continue
+                    elif entity["type"] == "chest":
+                        items = [entities.Item(x["id"], x["qty"]) for x in entity["properties"]["items"]]
+                        entity_obj = entities.Chest(entity["pos"], items)
+                    elif entity["type"] == "door":
+                        entity_obj = entities.Door(entity["pos"], entity["properties"]["state"], entity["properties"]["required_item"])
+                    elif entity["type"] == "padlock_wall":
+                        entity_obj = entities.PadlockWall(entity["pos"], entity["properties"]["required_item"])
 
                     if self.entities.keys().__contains__(entity["type"]):
-                        self.entities[entity["type"]].append(entity)
+                        self.entities[entity["type"]].append(entity_obj)
                     else:
-                        self.entities[entity["type"]] = [entity]
+                        self.entities[entity["type"]] = [entity_obj]
+
+                # for entity in level_data["entities"]:
+                #     entity["pos"] = [x * TILE_SIZE for x in entity["pos"].values()]
+                #
+                #     if entity["type"] == "enemy":
+                #         enemy = DefaultEnemy(
+                #             entity["properties"]["life"],
+                #             entity["pos"],
+                #             entity["behavior"]["pattern"],
+                #             assets,
+                #         )
+                #         enemy.direction = entity["behavior"]["direction"]
+                #         self.enemies.append(enemy)
+                #
+                #     if self.entities.keys().__contains__(entity["type"]):
+                #         self.entities[entity["type"]].append(entity)
+                #     else:
+                #         self.entities[entity["type"]] = [entity]
 
                 self.player = Player(self.player_start, assets)
                 self.player.direction = level_data["player"]["direction"]
@@ -112,7 +134,8 @@ class GameModel:
         for key, entities in self.entities.items():
             if key != "door" and key != "padlock_wall":
                 for entity in entities:
-                    if "is_opened" in entity["properties"].keys() and not entity["properties"]["is_opened"]:
+                    # if "is_opened" in entity["properties"].keys() and not entity["properties"]["is_opened"]:
+                    if hasattr(entity, "is_opened") and not entity.is_opened:
                         count += 1
         return count
 
@@ -122,20 +145,35 @@ class GameModel:
     def save_game(self):
         """Salva o progresso se o jogador desbloqueou um nível novo."""
         max_available = self.__max_level_available()
-        next_unlock = self.current_level + 1
+        next_unlock = self.current_level
 
         self.current_level_unlocked = max(1, min(max_available, next_unlock))
 
+        save_file_path = (Path.home() / "Documents" / "Try Pass" / "save_game.json").resolve()
+        save_file_path.parent.mkdir(parents=True, exist_ok=True)
+
         try:
-            with open(path.join(BASE_PATH, "level_data", "save_game.json"), "w") as file:
+            with open(path.join(save_file_path), "w") as file:
                 json.dump({"current_level_unlocked": self.current_level_unlocked}, file, indent=4)
         except IOError as e:
             print(f"Erro ao salvar jogo: {e}")
 
-    def __load_save_game(self):
-        save_path = path.join(BASE_PATH, "level_data", "save_game.json")
+    def reset_save_game(self):
+        save_folder_path = (Path.home() / "Documents" / "Try Pass").resolve()
+        save_folder_path.mkdir(parents=True, exist_ok=True)
+
         try:
-            with open(save_path, "r") as file:
+            with open(path.join(save_folder_path, "save_game.json"), "w") as file:
+                json.dump({"current_level_unlocked": 1}, file, indent=4)
+        except IOError as e:
+            print(f"Erro ao resetar o save game: {e}")
+
+    def __load_save_game(self):
+        save_file_path = (Path.home() / "Documents" / "Try Pass" / "save_game.json").resolve()
+        save_file_path.parent.mkdir(parents=True, exist_ok=True)
+
+        try:
+            with open(save_file_path, "r") as file:
                 data = json.load(file)
                 return data.get("current_level_unlocked", 1)
         except (FileNotFoundError, json.JSONDecodeError):

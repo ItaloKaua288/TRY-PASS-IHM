@@ -49,7 +49,9 @@ class Game:
             self._switch_state(GameState.IN_GAME)
         elif self.state == GameState.NEW_GAME:
             self.game_model.current_level = 1
-            self._switch_state(GameState.IN_GAME)
+            self.game_model.reset_save_game()
+            self.game_model.save_game()
+            self._switch_state(GameState.LEVEL_SELECT)
         elif self.state == GameState.QUIT:
             pygame.quit()
             sys.exit()

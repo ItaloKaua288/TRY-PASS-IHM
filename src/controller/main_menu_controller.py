@@ -52,12 +52,11 @@ class MenuController:
 
         selected_option = self.view.options[self.view.option_selected]
 
-        # Lógica de Transição de Estados
         if selected_option == "Continuar" and self.view.continue_button_is_visible:
             return GameState.CONTINUE_GAME
 
         elif selected_option == "Novo Jogo":
-            return GameState.NEW_GAME  # Isso vai para o NEW_GAME no GameController
+            return GameState.NEW_GAME
 
         elif selected_option == "Opções":
             print("Ainda não implementado")

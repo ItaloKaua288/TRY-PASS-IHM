@@ -82,16 +82,18 @@ class GameController:
             if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
                 self.__update_hold_state()
 
-                if self.view.panels["pause_menu"]["is_visible"] and self.view.panels["pause_menu"]["menu_rect"].collidepoint(mouse_pos):
+                if self.view.panels["pause_menu"]["is_visible"]:
                     return self.__handle_pause_menu(mouse_pos)
                 elif self.view.panels["top_bar"]["rect"].collidepoint(mouse_pos):
                     local_pos = (mouse_pos[0] - self.view.panels["top_bar"]["rect"].x, mouse_pos[1] - self.view.panels["top_bar"]["rect"].y)
                     return self.__handle_top_bar(local_pos)
-                elif self.game_is_paused:
-                    return None
                 elif self.view.panels["inventory_bar"]["is_visible"]:
                     local_pos = (mouse_pos[0] - self.view.panels["inventory_bar"]["rect"].x, mouse_pos[1] - self.view.panels["inventory_bar"]["rect"].y)
                     self.__handle_inventory_bar(local_pos)
+                elif self.game_is_paused:
+                    return None
+                elif self.view.panels["help_menu"]["is_visible"] and self.view.panels["help_menu"]["rect"].collidepoint(mouse_pos):
+                    self.__handle_help_menu(mouse_pos)
                 else:
                     for key, panel in self.view.panels.items():
                         if panel["rect"].collidepoint(mouse_pos):
@@ -137,6 +139,9 @@ class GameController:
         self.view.dragged_command = {"type": None, "index": None, "command": None}
         self.is_dragging = False
 
+    def __handle_help_menu(self, mouse_pos):
+        return None
+
     def __handle_top_bar(self, mouse_pos):
         for key, button in self.view.panels["top_bar"]["buttons"].items():
             if button["rect"].collidepoint(mouse_pos):
@@ -155,6 +160,9 @@ class GameController:
         return None
 
     def __handle_pause_menu(self, mouse_pos):
+        if not self.view.panels["pause_menu"]["menu_rect"].collidepoint(mouse_pos):
+            return None
+
         pause_menu = self.view.panels["pause_menu"]
 
         for key, button in pause_menu["buttons"].items():
@@ -176,7 +184,6 @@ class GameController:
     def __handle_inventory_bar(self, mouse_pos):
         panel = self.view.panels["inventory_bar"]
         player_inventory = self.game_model.player.inventory
-
         if panel["rect"].collidepoint(mouse_pos):
             for i, slot_rect in enumerate(panel["slot_rects"]):
                 if slot_rect.collidepoint(mouse_pos):
@@ -260,10 +267,10 @@ class GameController:
                 player_inv.handing_item = None
 
     def __update_execution(self):
+        self.__interact_item_map()
+
         if self.player_controller.entity.state != "idle":
             return None
-
-        self.__interact_item_map()
 
         if self.command_execution_index >= len(self.execution_interpreted_queue):
             self.is_executing = False
@@ -305,39 +312,42 @@ class GameController:
         for key, entities in map_panel["entities"].items():
             for i, entity in enumerate(entities):
                 if entity["rect"].colliderect(player.rect):
-                    if "is_opened" in entities_data[key][i]["properties"].keys() and not entities_data[key][i]["properties"]["is_opened"]:
+                    if hasattr(entities_data[key][i], "is_opened") and not entities_data[key][i].is_opened:
                         if key == "padlock_wall":
                             if player.inventory.handing_item and list(player.inventory.handing_item.keys())[0] == "key":
                                 player.inventory.handing_item = None
-                                entities_data[key][i]["properties"]["is_opened"] = True
+                                entities_data[key][i].is_opened = True
                             else:
                                 self.player_controller.move_back(self.player_controller.last_pos)
                                 self.player_controller.last_pos = None
-                        else:
-                            for item in entities_data[key][i]["properties"]["items"]:
-                                player.inventory.add_item(item["id"], item["qty"])
-                                entities_data[key][i]["properties"]["is_opened"] = True
+                        elif key == "chest":
+                            for item in entities_data[key][i].items:
+                                player.inventory.add_item(item.name, item.quantity)
+                                entities_data[key][i].is_opened = True
+                                self.view.items_floating_to_inventory.append({"key": item.name, "pos": list(entity["rect"].center), "surface": None})
                     return
 
     def __interact_enemy_map(self):
         player = self.game_model.player
         for enemy in self.game_model.enemies:
-            if enemy.rect.contains(player.rect):
-                print("VOCE MORREU!")
-                return GameState.MAIN_MENU
+            if enemy.rect.colliderect(player.rect):
+                return GameState.IN_GAME
         return None
 
     def __enemies_update(self):
         for enemy_ctrl in self.enemies:
             enemy_ctrl.update()
-            if enemy_ctrl.entity.state == "moving": continue
+            if enemy_ctrl.entity.state != "idle": continue
 
-            enemy_ctrl.entity.direction = enemy_ctrl.entity.movements[enemy_ctrl.entity.current_movement]
-            enemy_ctrl.move()
-
-            if enemy_ctrl.entity.state == "idle":
-                enemy_ctrl.entity.current_movement = (enemy_ctrl.entity.current_movement + 1) % len(
-                    enemy_ctrl.entity.movements)
+            current_movement = enemy_ctrl.entity.movements[enemy_ctrl.entity.current_movement]
+            if current_movement == "move":
+                enemy_ctrl.last_pos = enemy_ctrl.entity.rect.topleft
+                enemy_ctrl.move()
+            elif current_movement == "turn_left":
+                enemy_ctrl.turn_left()
+            elif current_movement == "turn_right":
+                enemy_ctrl.turn_right()
+            enemy_ctrl.entity.current_movement = (enemy_ctrl.entity.current_movement + 1) % len(enemy_ctrl.entity.movements)
 
 
 class CommandInterpreter:
