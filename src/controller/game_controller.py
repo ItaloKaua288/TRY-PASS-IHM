@@ -1,6 +1,8 @@
+import asyncio
 import sys
 import pygame
 
+from src.controller.sound_controller import SoundController
 from src.utils.settings import SCREEN_WIDTH, SCREEN_HEIGHT, GameState
 from src.utils.assets_manager import AssetsManager
 from src.model.game_model import GameModel
@@ -27,6 +29,8 @@ class Game:
         self.state = GameState.MAIN_MENU
         self.current_controller = None
 
+        self.sound_controller = SoundController(1, 0.2, 2)
+
         self._switch_state(GameState.MAIN_MENU)
 
     def _switch_state(self, new_state):
@@ -35,14 +39,17 @@ class Game:
 
         if self.state == GameState.MAIN_MENU:
             view = MenuView(self.screen, self.assets)
-            self.current_controller = MenuController(view, self.game_model)
+            self.current_controller = MenuController(view, self.game_model, self.sound_controller)
         elif self.state == GameState.LEVEL_SELECT:
             view = LevelSelectView(self.screen, self.assets)
             self.current_controller = LevelSelectController(view, self.assets, self.game_model)
         elif self.state == GameState.IN_GAME:
-            self.game_model.load_level(self.assets)
-            view = GameView(self.screen, self.assets, self.game_model)
-            self.current_controller = GameController(view, self.game_model)
+            if self.game_model.current_level >= 5:
+                self._switch_state(GameState.MAIN_MENU)
+            else:
+                self.game_model.load_level(self.assets)
+                view = GameView(self.screen, self.assets, self.game_model)
+                self.current_controller = GameController(view, self.game_model, self.sound_controller)
         elif self.state == GameState.CONTINUE_GAME:
             level = self.game_model.get_current_level_unlocked()
             self.game_model.current_level = level
@@ -56,7 +63,7 @@ class Game:
             pygame.quit()
             sys.exit()
 
-    def run(self):
+    async def run(self):
         """Loop Principal Único (Single Loop Pattern)"""
         running = True
         while running:
@@ -71,11 +78,11 @@ class Game:
                     self._switch_state(next_state)
 
             self.screen.fill((0, 0, 0))
+
             if self.current_controller:
                 self.current_controller.draw()
 
             pygame.display.flip()
             self.clock.tick(60)
 
-        pygame.quit()
-        sys.exit()
+            await asyncio.sleep(0)

@@ -1,6 +1,5 @@
 from src.utils.settings import TILE_SIZE
 
-
 class DefaultEntityController:
     def __init__(self, entity, game_model):
         self.entity = entity
@@ -64,7 +63,6 @@ class DefaultEntityController:
             self.entity.last_tick_sprite_update += 1
 
         if self.entity.current_sprite >= 3:
-            # self.rotation_count = 0
             self.entity.state = "idle"
 
             current_direction_index = self.entity.direction_list.index(self.entity.direction)
@@ -75,8 +73,6 @@ class DefaultEntityController:
                 self.entity.direction = self.entity.direction_list[
                     (current_direction_index - 1) % len(self.entity.direction_list)]
             return
-
-        # self.entity.rotation_count += self.entity.velocity
 
     def move(self):
         if not self.__next_move_is_valid():

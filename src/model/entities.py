@@ -44,15 +44,6 @@ class Door(BaseEntity):
         self.required_item = required_item
 
 
-# class Enemy(BaseEntity):
-#     def __init__(self, pos, subtype, life, direction, pattern, speed=1):
-#         super().__init__(pos)
-#         self.subtype = subtype
-#         self.life = life
-#         self.direction = direction
-#         self.pattern = pattern
-#         self.speed = speed
-
 class PadlockWall(BaseEntity):
     def __init__(self, pos, required_item):
         super().__init__(pos)
@@ -109,26 +100,6 @@ class DefaultEnemy(pygame.sprite.Sprite):
                     frames.append(scaled_frame)
 
                 self.sprites[state][direction] = frames
-        # self.sprites = {}
-        #
-        # original_frame_size = 1000
-        #
-        # for i, state in enumerate(states):
-        #     self.sprites[state] = {}
-        #     for j, direction in enumerate(directions):
-        #         self.sprites[state][direction] = []
-        #
-        #         sheet_y = i * 3000 + (j + (i % 3)) * original_frame_size
-        #
-        #         for x in range(4):
-        #             sheet_x = x * original_frame_size
-        #
-        #             rect_clip = pygame.Rect(sheet_x, sheet_y, original_frame_size, original_frame_size)
-        #             subsurface = spritesheet.subsurface(rect_clip)
-        #
-        #             scaled_surface = pygame.transform.smoothscale(subsurface, (TILE_SIZE, TILE_SIZE))
-        #
-        #             self.sprites[state][direction].append(scaled_surface)
 
         self.image = self.sprites[self.state][self.direction][0]
 

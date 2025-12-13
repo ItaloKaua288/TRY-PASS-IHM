@@ -2,7 +2,7 @@
   "meta": {
     "id": 1,
     "title": "Level 1",
-    "description": "Tutorial - Movimentos básicos"
+    "description": "Movimentos básicos"
   },
   "config": {
     "tile_legend": {
@@ -18,7 +18,7 @@
   "final_objective": {"x": 17, "y": 7},
   "help": "Monte a sequência de comandos na área de execução, canto inferior da tela, utilizando as ferramentas disponiveis na área de ferramentas, na direita da tela\nEx: Andar - Andar - Virar",
   "constraints": {
-    "available_commands": ["walk", "turn_right", "turn_left"]
+    "available_commands": ["turn_right", "turn_left", "walk"]
   },
   "map": {
     "width": 31,
@@ -50,5 +50,9 @@
         "required_item": "key"
       }
     }
+  ],
+  "introduction_text_lines": [
+    "Olá, Viajante 01! Sou sua Viajante 02, aquela que lhe acompanhará na sua jornada.",
+    "Primeiramente, quero que você aprenda o básico para chegar até o seu objetivo final."
   ]
 }

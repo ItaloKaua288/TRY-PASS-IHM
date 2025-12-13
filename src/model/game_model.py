@@ -10,6 +10,7 @@ from src.utils.settings import BASE_PATH, TILE_SIZE, TOTAL_SLOTS_EXECUTION
 
 class GameModel:
     def __init__(self, current_level=1):
+        self.introduction_text_lines = None
         self.help = None
         self.map = None
         self.constraints = None
@@ -49,6 +50,7 @@ class GameModel:
                 self.constraints = level_data["constraints"]
                 self.map = level_data["map"]
                 self.help = level_data["help"]
+                self.introduction_text_lines = level_data["introduction_text_lines"]
 
                 self.entities = {}
                 for entity in level_data["entities"]:
@@ -71,24 +73,6 @@ class GameModel:
                         self.entities[entity["type"]].append(entity_obj)
                     else:
                         self.entities[entity["type"]] = [entity_obj]
-
-                # for entity in level_data["entities"]:
-                #     entity["pos"] = [x * TILE_SIZE for x in entity["pos"].values()]
-                #
-                #     if entity["type"] == "enemy":
-                #         enemy = DefaultEnemy(
-                #             entity["properties"]["life"],
-                #             entity["pos"],
-                #             entity["behavior"]["pattern"],
-                #             assets,
-                #         )
-                #         enemy.direction = entity["behavior"]["direction"]
-                #         self.enemies.append(enemy)
-                #
-                #     if self.entities.keys().__contains__(entity["type"]):
-                #         self.entities[entity["type"]].append(entity)
-                #     else:
-                #         self.entities[entity["type"]] = [entity]
 
                 self.player = Player(self.player_start, assets)
                 self.player.direction = level_data["player"]["direction"]
@@ -131,9 +115,9 @@ class GameModel:
 
     def get_remaining_collectibles_count(self):
         count = 0
-        for key, entities in self.entities.items():
+        for key, entity_list in self.entities.items():
             if key != "door" and key != "padlock_wall":
-                for entity in entities:
+                for entity in entity_list:
                     # if "is_opened" in entity["properties"].keys() and not entity["properties"]["is_opened"]:
                     if hasattr(entity, "is_opened") and not entity.is_opened:
                         count += 1
@@ -162,6 +146,7 @@ class GameModel:
         save_folder_path = (Path.home() / "Documents" / "Try Pass").resolve()
         save_folder_path.mkdir(parents=True, exist_ok=True)
 
+        self.current_level = 0
         try:
             with open(path.join(save_folder_path, "save_game.json"), "w") as file:
                 json.dump({"current_level_unlocked": 1}, file, indent=4)

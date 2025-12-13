@@ -66,5 +66,9 @@
         "required_item": "key"
       }
     }
+  ],
+  "introduction_text_lines": [
+    "Agora temos um problema!",
+    "O caminho está trancado por uma barreira e você terá que procurar uma chave pelo mapa."
   ]
 }

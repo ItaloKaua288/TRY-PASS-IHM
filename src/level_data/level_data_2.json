@@ -2,7 +2,7 @@
   "meta": {
     "id": 2,
     "title": "Level 2",
-    "description": "Aprendendo a usar Repetições"
+    "description": "Aprendendo a usar REPETIÇÔES"
   },
   "config": {
     "tile_legend": {
@@ -18,7 +18,17 @@
   "final_objective": {"x": 29, "y": 6},
   "help": "Aqui você tem um longo caminho a percorrer.\n - Chegue até a porta no final do caminho utilizando o minimo de bloco 'Andar'",
   "constraints": {
-    "available_commands": ["walk", "turn_right", "turn_left", "repeat", "end_repeat"]
+    "available_commands": ["walk", "turn_right", "turn_left", "repeat", "end_repeat"],
+    "rules": {
+      "commands": {
+        "repeat": {
+          "min": 1
+        },
+        "walk": {
+          "min": 1
+        }
+      }
+    }
   },
   "map": {
     "width": 31,
@@ -50,5 +60,9 @@
         "required_item": "key"
       }
     }
+  ],
+  "introduction_text_lines": [
+    "Vejo que você terá habilidade para completar todos os desafios, muito bem!",
+    "Agora parece que você terá um longo caminho para percorrer, boa sorte."
   ]
 }
