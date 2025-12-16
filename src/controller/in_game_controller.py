@@ -141,6 +141,8 @@ class GameController:
         if duration > HOLD_THRESHOLD_MS:
             self.hold_action_triggered = True
             panel = self.view.panels["execution_bar"]
+            if panel["config_repeat"]["is_visible"] and panel["config_repeat"]["rect"].collidepoint(self.mouse_down_pos):
+                return
             if panel["rect"].collidepoint(self.mouse_down_pos):
                 clicked_command = self.view.get_clicked_command_info(self.mouse_down_pos)
 
@@ -320,6 +322,9 @@ class GameController:
                     return
 
     def __handle_tools_bar(self, mouse_pos):
+        if self.is_executing:
+            return
+
         panel = self.view.panels["tools_bar"]
         for key, button in panel["buttons"].items():
             if button["rect"].collidepoint(mouse_pos):

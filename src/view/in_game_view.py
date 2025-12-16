@@ -381,6 +381,9 @@ class GameView:
             if game_paused and key not in  ("pause_menu", "inventory_bar"):
                 continue
 
+            if is_executing and key == "tools_bar":
+                continue
+
             panel_topleft = panel_items["rect"].topleft
             local_mouse_pos = mouse_pos[0] - panel_topleft[0], mouse_pos[1] - panel_topleft[1]
             for button in panel_items["buttons"].values():
