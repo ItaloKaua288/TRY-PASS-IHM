@@ -40,6 +40,7 @@ class MenuController:
 
     def __update_sounds(self):
         self.hover_sound.set_volume(self.sound_controller.get_effects_volume())
+        self.click_sound.set_volume(self.sound_controller.get_effects_volume())
 
     def __update_options_menu(self):
         panel = self.view.panels["options_menu"]
@@ -97,7 +98,6 @@ class MenuController:
 
                             if k == "music_volume":
                                 self.sound_controller.music_up()
-                                print(self.sound_controller.music_volume)
                             else:
                                 self.sound_controller.effects_up()
                     return None

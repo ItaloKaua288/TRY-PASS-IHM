@@ -42,7 +42,7 @@ class Game:
             self.current_controller = MenuController(view, self.game_model, self.sound_controller)
         elif self.state == GameState.LEVEL_SELECT:
             view = LevelSelectView(self.screen, self.assets)
-            self.current_controller = LevelSelectController(view, self.assets, self.game_model)
+            self.current_controller = LevelSelectController(view, self.assets, self.game_model, self.sound_controller)
         elif self.state == GameState.IN_GAME:
             if self.game_model.current_level >= 5:
                 self._switch_state(GameState.MAIN_MENU)

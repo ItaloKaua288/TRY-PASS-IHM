@@ -3,14 +3,17 @@ import pygame
 from src.utils.settings import GameState
 
 class LevelSelectController:
-    def __init__(self, level_select_view, assets, game_model):
+    def __init__(self, level_select_view, assets, game_model, sound_controller):
         self.view = level_select_view
         self.assets = assets
         self.game_model = game_model
 
         self.change_level_sound = pygame.mixer.Sound('src/assets/sounds/hit_1.wav')
+        self.change_level_sound.set_volume(sound_controller.get_effects_volume())
         self.click_sound = pygame.mixer.Sound('src/assets/sounds/blop_1.wav')
+        self.click_sound.set_volume(sound_controller.get_effects_volume())
         self.wrong_sound = pygame.mixer.Sound('src/assets/sounds/hit_2.wav')
+        self.wrong_sound.set_volume(sound_controller.get_effects_volume())
 
         self.view.current_level_unlocked = self.game_model.get_current_level_unlocked()
 

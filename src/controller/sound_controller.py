@@ -23,12 +23,18 @@ class SoundController:
     def music_up(self):
         if self.music_volume <= 0.8:
             self.music_volume = round(self.music_volume + 0.2, 1)
-            pygame.mixer.music.set_volume(self.music_volume)
+            if self.music_enabled:
+                pygame.mixer.music.set_volume(self.music_volume)
+            else:
+                pygame.mixer.music.set_volume(0)
 
     def music_down(self):
         if self.music_volume >= 0.2:
             self.music_volume = round(self.music_volume - 0.2, 1)
-            pygame.mixer.music.set_volume(self.music_volume)
+            if self.music_enabled:
+                pygame.mixer.music.set_volume(self.music_volume)
+            else:
+                pygame.mixer.music.set_volume(0)
 
     def get_music_volume(self):
         return self.music_volume * self.volume
