@@ -13,6 +13,7 @@ class GameController:
 
         self.game_is_paused = True
         self.is_executing = False
+        self.game_over = False
 
         self.current_state = "coding"
 
@@ -40,16 +41,15 @@ class GameController:
         }
 
     def update(self, events):
-        """
-        Atualiza a lógica do jogo a cada frame.
-        Retorna: O próximo GameState (ou None se não mudar).
-        """
         next_state = None
 
         state_from_events = self.__handle_events(events)
 
         self.view.update(self.game_is_paused, self.is_executing)
         self.__update_sounds()
+
+        if self.game_over and not self.view.level_chat.is_visible:
+            return GameState.IN_GAME
 
         if self.game_is_paused:
             return state_from_events
@@ -104,8 +104,10 @@ class GameController:
 
                 if self.view.panels["pause_menu"]["is_visible"]:
                     return self.__handle_pause_menu(mouse_pos)
-                elif self.view.introduction_level_chat.is_visible:
-                    self.__handle_introduction_level_chat(mouse_pos)
+                elif self.view.level_chat.is_visible:
+                    self.__handle_level_chat(mouse_pos)
+                elif self.view.tip_view.is_visible:
+                    self.__handle_tips_view()
                 elif self.view.panels["top_bar"]["rect"].collidepoint(mouse_pos):
                     local_pos = (mouse_pos[0] - self.view.panels["top_bar"]["rect"].x, mouse_pos[1] - self.view.panels["top_bar"]["rect"].y)
                     return self.__handle_top_bar(local_pos)
@@ -169,11 +171,11 @@ class GameController:
     def __handle_help_menu(self):
         return None
 
-    def __handle_introduction_level_chat(self, mouse_pos):
-        if not self.view.introduction_level_chat.rect.collidepoint(mouse_pos):
+    def __handle_level_chat(self, mouse_pos):
+        if not self.view.level_chat.rect.collidepoint(mouse_pos):
             return
 
-        panel = self.view.introduction_level_chat
+        panel = self.view.level_chat
 
         if panel.current_text_line_panel == -1:
             panel.current_text_line_panel = 0
@@ -182,9 +184,11 @@ class GameController:
         if panel.current_text_line_panel >= len(panel.text_lines_panels) - 1:
             panel.is_visible = False
             self.game_is_paused = False
-            self.view.panels["help_menu"]["is_visible"] = True
+            # self.view.panels["help_menu"]["is_visible"] = True
         else:
             panel.current_text_line_panel += 1
+
+        self.sounds["hit_1"].play()
 
     def __handle_top_bar(self, mouse_pos):
         for key, button in self.view.panels["top_bar"]["buttons"].items():
@@ -198,6 +202,8 @@ class GameController:
                         pause_menu = self.view.panels["pause_menu"]
                         pause_menu["is_visible"] = not pause_menu["is_visible"]
                         self.game_is_paused = pause_menu["is_visible"]
+                    elif key == "restart_level":
+                        return GameState.IN_GAME
                     elif key == "music_note":
                         self.sound_controller.disable_music()
                     elif key == "unmusic_note":
@@ -321,6 +327,13 @@ class GameController:
                     panel["is_visible"] = False
                     return
 
+    def __handle_tips_view(self):
+        tip_view = self.view.tip_view
+        if tip_view.tips_data[tip_view.current_tutorial]["close_btn"]["is_hovered"]:
+            tip_view.is_visible = False
+            tip_view.current_tutorial = None
+            self.game_is_paused = False
+
     def __handle_tools_bar(self, mouse_pos):
         if self.is_executing:
             return
@@ -329,6 +342,13 @@ class GameController:
         for key, button in panel["buttons"].items():
             if button["rect"].collidepoint(mouse_pos):
                 self.sounds["hit_1"].play()
+                if button["info_btn"]["is_hovered"]:
+                    self.view.tip_view.is_visible = True
+                    self.view.tip_view.show_tutorial(key)
+                    self.game_is_paused = True
+                    button["info_btn"]["is_hovered"] = False
+                    return
+
                 if key == "repeat":
                     self.game_model.add_execution_command(key, 2)
                 else:
@@ -447,7 +467,11 @@ class GameController:
         for enemy in self.game_model.enemies:
             if enemy.rect.colliderect(player.rect):
                 self.sounds["hit_3"].play()
-                return GameState.IN_GAME
+                self.game_over = True
+                self.game_is_paused = True
+                self.view.level_chat.game_over = True
+                self.view.level_chat.is_visible = True
+                self.view.level_chat.current_text_line_panel = -1
         return None
 
     def __enemies_update(self):

@@ -24,7 +24,8 @@ class GameView:
             "popup_alert_menu": self.__create_popup_alert()
         }
 
-        self.introduction_level_chat = IntroductionLevelChatView(self.screen, self.assets, game_model)
+        self.level_chat = LevelChatView(self.screen, self.assets, game_model)
+        self.tip_view = TipView(self.screen, self.assets, game_model)
 
         self._current_command_signature = ""
         self.execution_commands_queue = []
@@ -38,8 +39,8 @@ class GameView:
     def __create_top_bar(self):
         surface = pygame.Surface((1000, 60), pygame.SRCALPHA)
 
-        buttons_name = ["options", "music_note", "unmusic_note", "idea", "inventory"]
-        buttons_pos = [(30, 30), (850, 30), (850, 30), (910, 30), (970, 30)]
+        buttons_name = ["options", "restart_level", "music_note", "unmusic_note", "idea", "inventory"]
+        buttons_pos = [(30, 30), (790, 30), (850, 30), (850, 30), (910, 30), (970, 30)]
 
         buttons = {}
         for i, name in enumerate(buttons_name):
@@ -89,9 +90,37 @@ class GameView:
             btn_surface.blit(icon_surf, icon_surf.get_rect(center=btn_surface.get_rect().center))
             btn_surface_hover.blit(icon_surf, icon_surf.get_rect(center=btn_surface.get_rect().center))
             surface.blit(btn_surface, btn_rect.topleft)
-            buttons[command] = {"surface": btn_surface, "hover_surface": btn_surface_hover, "rect": btn_rect, "is_hovered": False, "is_visible": True}
 
-        return {"surface": surface, "rect": surface.get_rect(topleft=(1010, 5)), "buttons": buttons, "is_visible": True}
+            info_btn_surface = pygame.Surface((15, 15))
+            info_btn_hover_surface  = info_btn_surface.copy()
+            info_btn_surface.fill(Colors.WHITE.value)
+            info_btn_hover_surface.fill(Colors.DARK_GRAY.value)
+
+            font = self.assets.get_font("Monospace", 15)
+            text_surface = font.render("?", True, Colors.BLACK.value)
+            text_hover_surface = font.render("?", True, Colors.WHITE.value)
+            info_btn_surface.blit(text_surface, (2, -3))
+            info_btn_hover_surface.blit(text_hover_surface, (2, -3))
+
+            # tip_overlay_panel = pygame.Surface(self.screen.get_size(), pygame.SRCALPHA)
+            # tip_overlay_panel.fill(Colors.BLACK.value + (40,))
+
+            tip_panel = pygame.Surface((60, 60), pygame.SRCALPHA)
+            tip_panel.fill(Colors.BLACK.value)
+
+            buttons[command] = {"surface": btn_surface,
+                                "hover_surface": btn_surface_hover,
+                                "rect": btn_rect,
+                                "is_hovered": False,
+                                "is_visible": True,
+                                "info_btn": {
+                                    "surface": info_btn_surface,
+                                    "hover_surface": info_btn_hover_surface,
+                                    "rect": info_btn_surface.get_rect(topleft=(btn_rect.width - info_btn_surface.get_width(), 0)),
+                                    "is_hovered": False,
+                                }}
+
+        return {"surface": surface, "rect": surface.get_rect(topleft=(1010, 5)), "buttons": buttons, "is_visible": True, "tip_visible": True}
 
     def __create_execution_bar(self):
         surface = pygame.Surface((750, 150), pygame.SRCALPHA)
@@ -131,7 +160,7 @@ class GameView:
         text = font.render("Repetições", True, Colors.BLACK.value)
         config_repeat_surface.blit(text, (config_repeat_surface.get_rect().centerx - text.get_width() // 2, 1))
 
-        buttons_name = ["back", "forward", "check"]
+        buttons_name = ["back", "forward", "ok"]
         buttons_pos = ((25, 40), (125, 40), (config_repeat_surface.get_rect().centerx, 80))
         config_repeat_buttons = {}
         for i, name in enumerate(buttons_name):
@@ -267,7 +296,7 @@ class GameView:
 
         overlay_surface.blit(surface, surface_rect)
 
-        buttons_name = ("Continuar", "Novo Jogo", "Selecionar Fase", "Voltar ao Inicio", "Sair")
+        buttons_name = ("Continuar", "Novo Jogo", "Selecionar Fase", "Voltar ao Início", "Sair")
         buttons = {}
         for i, name in enumerate(buttons_name):
             text_surface = font.render(name, True, Colors.BLACK.value)
@@ -386,8 +415,22 @@ class GameView:
 
             panel_topleft = panel_items["rect"].topleft
             local_mouse_pos = mouse_pos[0] - panel_topleft[0], mouse_pos[1] - panel_topleft[1]
-            for button in panel_items["buttons"].values():
+            for k, button in panel_items["buttons"].items():
                 if button["is_visible"]:
+                    if key == "tools_bar":
+                        btn_topleft = button["rect"].topleft
+                        local_btn_mouse_pos = local_mouse_pos[0] - btn_topleft[0], local_mouse_pos[1] - btn_topleft[1]
+                        info_btn = button["info_btn"]
+                        if info_btn["rect"].collidepoint(local_btn_mouse_pos):
+                            panel_items["buttons"][k]["info_btn"]["is_hovered"] = True
+                        else:
+                            panel_items["buttons"][k]["info_btn"]["is_hovered"] = False
+
+                        if button["info_btn"]["is_hovered"]:
+                            button["is_hovered"] = False
+                            panel_items["surface"].blit(button["surface"], button["rect"])
+                            continue
+
                     if button["rect"].collidepoint(local_mouse_pos):
                         panel_items["surface"].blit(button["hover_surface"], button["rect"])
                         button["is_hovered"] = True
@@ -395,6 +438,7 @@ class GameView:
                         panel_items["surface"].blit(button["surface"], button["rect"])
                         button["is_hovered"] = False
 
+        self.tip_view.update(mouse_pos)
         self.__update_state_info_bar()
         self.__update_items_floating_to_inventory()
         self.__update_map_bar()
@@ -402,6 +446,21 @@ class GameView:
         self.__update_status_bar()
         self.__update_inventory_bar()
         self.__update_popup_alert_menu()
+        self.__update_tools_bar()
+
+    def __update_tools_bar(self):
+        tools_panel = self.panels["tools_bar"]
+        buttons = tools_panel["buttons"]
+
+        for k, button in buttons.items():
+            info_btn = button["info_btn"]
+
+            if info_btn["is_hovered"]:
+                button["surface"].blit(info_btn["hover_surface"], info_btn["rect"])
+                button["hover_surface"].blit(info_btn["hover_surface"], info_btn["rect"])
+            else:
+                button["surface"].blit(info_btn["surface"], info_btn["rect"])
+                button["hover_surface"].blit(info_btn["surface"], info_btn["rect"])
 
     def __update_state_info_bar(self):
         panel = self.panels["state_info_bar"]
@@ -656,7 +715,7 @@ class GameView:
 
         for k, panel in self.panels.items():
             if panel["is_visible"]:
-                if (k == "tools_bar" and self.game_state != "coding") or (k == "top_bar" and self.introduction_level_chat.is_visible):
+                if (k == "tools_bar" and self.game_state != "coding") or (k == "top_bar" and self.level_chat.is_visible):
                     self.screen.blit(pygame.transform.gaussian_blur(panel["surface"].copy(), 4), panel["rect"])
                 else:
                     self.screen.blit(panel["surface"], panel["rect"])
@@ -669,11 +728,14 @@ class GameView:
                 continue
             self.screen.blit(item["surface"], item["pos"])
 
-        if self.introduction_level_chat.is_visible:
-            self.introduction_level_chat.draw()
+        if self.level_chat.is_visible:
+            self.level_chat.draw()
+
+        if self.tip_view.is_visible:
+            self.tip_view.draw()
 
 
-class IntroductionLevelChatView:
+class LevelChatView:
     def __init__(self, view, assets, game_model):
         self.view = view
         self.assets = assets
@@ -681,6 +743,10 @@ class IntroductionLevelChatView:
         self.lines_text = game_model.introduction_text_lines
         self.text_lines_panels = []
         self.current_text_line_panel = -1
+
+        self.game_over = False
+        self.game_over_lines = ["Você perdeu! Mas não é o fim.", "O tempo está ao seu lado, pois ele é ilimitado! Reinciando..."]
+        self.game_over_text_panels = []
 
         self.is_visible = True
 
@@ -706,7 +772,118 @@ class IntroductionLevelChatView:
             current_panel.blit(text_surface, (10, 40))
             self.text_lines_panels.append(current_panel)
 
+        for line in self.game_over_lines:
+            current_panel = panel.copy()
+            text_surface = font.render(line, True, Colors.BLACK.value, wraplength=current_panel.get_width() - 150)
+            current_panel.blit(text_surface, (10, 40))
+            self.game_over_text_panels.append(current_panel)
+
     def draw(self):
-        current_text_line_panel = self.text_lines_panels[0 if self.current_text_line_panel == -1 else self.current_text_line_panel]
-        self.view.blit(current_text_line_panel, self.rect)
+        if self.game_over:
+            current_text_line_panel = self.game_over_text_panels[0 if self.current_text_line_panel == -1 else self.current_text_line_panel]
+            self.view.blit(current_text_line_panel, self.rect)
+        else:
+            current_text_line_panel = self.text_lines_panels[0 if self.current_text_line_panel == -1 else self.current_text_line_panel]
+            self.view.blit(current_text_line_panel, self.rect)
         self.view.blit(self.character, (self.view.get_width() - self.character.get_width() + 100, self.view.get_height() - self.character.get_height() - 10))
+
+
+class TipView:
+    def __init__(self, view, assets, game_model):
+        self.view = view
+        self.assets = assets
+        self.game_model = game_model
+
+        self.is_visible = False
+
+        self.tips_data = {}
+        self.current_tutorial = None
+
+        self.overlay = pygame.Surface(self.view.get_size(), pygame.SRCALPHA)
+        self.overlay.fill((0, 0, 0, 150))
+
+        self.__create_elements()
+
+    def __create_elements(self):
+        raw_images = {
+            "walk": self.assets.get_image("images/images/walk_tutorial.png"),
+            "turn": self.assets.get_image("images/images/turn_tutorial.png"),
+            "repeat": self.assets.get_image("images/images/repeat_tutorial.png")
+        }
+
+        btn_size = 40
+        close_btn_surface = pygame.Surface((btn_size, btn_size))
+        close_btn_hover_surface = close_btn_surface.copy()
+
+        close_btn_surface.fill(Colors.RED.value)
+        close_btn_hover_surface.fill(Colors.DARK_RED.value)
+
+        font = self.assets.get_font("Monospace", 25, bold=True)
+        text_surface = font.render("X", True, Colors.WHITE.value)
+
+        text_rect = text_surface.get_rect(center=(btn_size // 2, btn_size // 2))
+        close_btn_surface.blit(text_surface, text_rect)
+        close_btn_hover_surface.blit(text_surface, text_rect)
+
+        target_size = (self.view.get_width() - 100, self.view.get_height() - 100)
+
+        for key, surface in raw_images.items():
+            final_surface = pygame.transform.smoothscale(surface, target_size)
+
+            img_rect = final_surface.get_rect(center=(self.view.get_width() // 2, self.view.get_height() // 2))
+
+            btn_rect_relative = close_btn_surface.get_rect(topright=(final_surface.get_width() - 5, 5))
+
+            btn_rect_absolute = btn_rect_relative.copy()
+            btn_rect_absolute.x += img_rect.x
+            btn_rect_absolute.y += img_rect.y
+
+            self.tips_data[key] = {
+                "surface": final_surface,
+                "rect": img_rect,
+                "close_btn": {
+                    "surface": close_btn_surface,
+                    "hover_surface": close_btn_hover_surface,
+                    "rect_relative": btn_rect_relative,
+                    "rect_absolute": btn_rect_absolute,
+                    "is_hovered": False
+                }
+            }
+
+    def update(self, mouse_pos):
+        if self.current_tutorial is None:
+            return
+
+        data = self.tips_data[self.current_tutorial]
+        btn_data = data["close_btn"]
+
+        if btn_data["rect_absolute"].collidepoint(mouse_pos):
+            btn_data["is_hovered"] = True
+        else:
+            btn_data["is_hovered"] = False
+
+    def draw(self):
+        if self.current_tutorial is None:
+            return
+
+        data = self.tips_data[self.current_tutorial]
+
+        self.view.blit(self.overlay, (0, 0))
+
+        self.view.blit(data["surface"], data["rect"])
+
+        btn = data["close_btn"]
+        surface_to_draw = btn["hover_surface"] if btn["is_hovered"] else btn["surface"]
+
+        self.view.blit(surface_to_draw, btn["rect_absolute"])
+
+    def show_tutorial(self, tutorial_key):
+        if tutorial_key == "turn_left":
+            tutorial_key = "turn"
+        elif tutorial_key == "turn_right":
+            tutorial_key = "turn"
+        elif tutorial_key == "end_repeat":
+            tutorial_key = "repeat"
+
+        if tutorial_key in self.tips_data:
+            self.current_tutorial = tutorial_key
