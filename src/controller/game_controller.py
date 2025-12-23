@@ -6,6 +6,7 @@ from src.controller.sound_controller import SoundController
 from src.utils.settings import SCREEN_WIDTH, SCREEN_HEIGHT, GameState
 from src.utils.assets_manager import AssetsManager
 from src.model.game_model import GameModel
+from src.view.end_credits_view import EndCreditsView
 
 from src.view.level_select_view import LevelSelectView
 from src.controller.level_select_controller import LevelSelectController
@@ -13,6 +14,7 @@ from src.view.main_menu_view import MenuView
 from src.controller.main_menu_controller import MenuController
 from src.view.in_game_view import GameView
 from src.controller.in_game_controller import GameController
+from src.controller.end_credits_controller import EndCreditsController
 
 class Game:
     def __init__(self):
@@ -59,6 +61,9 @@ class Game:
             self.game_model.reset_save_game()
             self.game_model.save_game()
             self._switch_state(GameState.LEVEL_SELECT)
+        elif self.state == GameState.END_CREDITS:
+            view = EndCreditsView(self.screen, self.assets)
+            self.current_controller = EndCreditsController(view)
         elif self.state == GameState.QUIT:
             pygame.quit()
             sys.exit()

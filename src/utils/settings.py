@@ -44,3 +44,4 @@ class GameState(Enum):
     IN_GAME = auto()
     LEVEL_SELECT = auto()
     QUIT = auto()
+    END_CREDITS = auto()

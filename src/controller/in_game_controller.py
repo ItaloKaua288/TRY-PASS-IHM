@@ -433,7 +433,7 @@ class GameController:
             if self.game_model.current_level >= self.game_model.current_level_unlocked:
                 self.game_model.current_level_unlocked += 1
                 self.game_model.save_game()
-            return GameState.IN_GAME
+            return GameState.END_CREDITS
         return None
 
     def __interact_item_map(self):
